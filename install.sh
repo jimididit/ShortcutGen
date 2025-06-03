@@ -148,7 +148,7 @@ function main() {
     local program="shortcutgen"
     local source="/usr/local/src/${program}.sh"
     local destination="/usr/local/bin/${program}"
-    local url="https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/main/shortcutgen.sh"
+    local url="https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/shortcutgen.sh"
 
     if [[ ! $(check_privileges) ]]
     then

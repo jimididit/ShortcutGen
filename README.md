@@ -7,9 +7,9 @@
 Run the installer as root. It'll install the required dependencies.
 
 ```
-# curl --proto '=https' --tlsv1.2 -sSfL "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/main/install.sh" | bash
+# curl --proto '=https' --tlsv1.2 -sSfL "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/install.sh" | bash
 
-# wget -qO - "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/main/install.sh" | bash
+# wget -qO - "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/install.sh" | bash
 ```
 
 ## Help Menu
