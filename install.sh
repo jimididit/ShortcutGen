@@ -25,8 +25,9 @@ function quit() {
 }
 
 function install_powershell() {
-    local file
     local github_repository_api_url="https://api.github.com/repos/PowerShell/PowerShell/releases/latest"
+    local response=$(curl -s "${github_repository_api_url}")
+    local file
     local artifacts
 
     function setup_wineprefix() {
@@ -39,10 +40,10 @@ function install_powershell() {
         if [[ "${HOSTTYPE}" == "x86_64" ]]
         then
             print "progress" "Configuring wine directory with the latest version of Windows..."
-            eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' winecfg /v win11"
+            eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' winecfg /v win11 &>/dev/null"
 
             print "progress" "Initializing wine directory..."
-            eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wineboot -u"
+            eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wineboot -u &>/dev/null"
         else
             print "error" "x86_64 (64-bit) architecture is only supported!"
             quit 1
@@ -52,7 +53,6 @@ function install_powershell() {
     setup_wineprefix
 
     print "progress" "Fetching latest PowerShell release URLs..."
-    local response=$(curl -s "${github_repository_api_url}")
     while [[ "${response}" =~ \"browser_download_url\":\ *\"([^\"]+)\"(.*) ]]
     do
         artifacts+="${BASH_REMATCH[1]}"$'\n'
@@ -85,7 +85,7 @@ function install_powershell() {
     done
 
     print "progress" "Installing Powershell..."
-    eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package ${file} /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1"
+    eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package ${file} /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
     rm -f "${file}"
     print "completed" "Powershell Installed!"
 }
@@ -148,18 +148,40 @@ function main() {
     local program="shortcutgen"
     local source="/usr/local/src/${program}.sh"
     local destination="/usr/local/bin/${program}"
-    local url="https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/shortcutgen.sh" # TODO: main issue
+    local pattern="${program}.sh"
+    local github_repository_api_url="https://api.github.com/repos/U53RW4R3/ShortcutGen/releases/latest"
+    local response=$(curl -s "${github_repository_api_url}")
+    local artifacts
 
     check_dependencies
 
-    print "information" "[*] Installing ShortcutGen..."
-    if [[ -f "${source}" || ! -f "${source}" ]]
-    then
-        sudo rm -f "${source}" 2>/dev/null
+    print "information" "Installing ShortcutGen..."
+    [[ -f "${source}" ]] && sudo rm -f "${source}" 2>/dev/null
+    
+    while [[ "${response}" =~ \"browser_download_url\":\ *\"([^\"]+)\"(.*) ]]
+    do
+        artifacts+="${BASH_REMATCH[1]}"$'\n'
+        response="${BASH_REMATCH[2]}"
+    done
+    
+    artifacts=${artifacts%$'\n'}
+    
+    local -a urls=(${artifacts})
 
-        sudo curl -sLo "${source}" "${url}"
-        sudo chmod 755 "${source}"
-    fi
+    for url in "${urls[@]}"
+    do
+        if [[ "${url}" == *"${pattern}"* ]]
+        then
+            file=$(basename "${url}")
+            [[ -f ${source} ]] && rm -f "${source}"
+            print "progress" "Downloading ${url}"
+            sudo curl -sLo "${source}" "${url}"
+            [[ -f ${source} ]] && print "completed" "File downloaded: ${file}"
+            break
+        fi
+    done
+
+    sudo chmod 755 "${source}"
 
     if [[ -f "${destination}" || ! -f "${destination}" ]]
     then

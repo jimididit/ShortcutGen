@@ -353,7 +353,7 @@ function main() {
                 ARGUMENTS="${2}"
                 shift 2
                 ;;
-            -i | --IP)
+            -i | --ip)
                 IP="${2}"
                 shift 2
                 ;;
