@@ -3,7 +3,7 @@
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
 function check_privileges() {
-    ((EUID != 0)) && return 1
+    ((EUID == 0)) && return ${?}
 }
 
 function print() {
@@ -150,7 +150,8 @@ function main() {
     local destination="/usr/local/bin/${program}"
     local url="https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/shortcutgen.sh"
 
-    if [[ ! $(check_privileges) ]]
+    check_privileges
+    if ((${?} != 0))
     then
         print "error" "Run as root!"
         quit 1
