@@ -3,7 +3,7 @@
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
 function check_privileges() {
-    ((EUID != 0)) && return 0
+    ((EUID != 0)) && return 1
 }
 
 function print() {
