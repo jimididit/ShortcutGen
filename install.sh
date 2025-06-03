@@ -2,10 +2,6 @@
 
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
-function check_privileges() {
-    ((EUID == 0)) && return ${?}
-}
-
 function print() {
     local status="${1}"
     local message="${2}"
@@ -99,21 +95,21 @@ function install_packages() {
 
     if [[ -f "/etc/debian_version" ]]
     then
-        DEBIAN_FRONTEND=noninteractive apt install -yqq "${programs[@]}"
+        DEBIAN_FRONTEND=noninteractive sudo apt install -yqq "${programs[@]}"
     elif [[ -f "/etc/fedora-release" ]]
     then
-        dnf install -y "${programs[@]}"
+        sudo dnf install -y "${programs[@]}"
     elif [[ -f "/etc/redhat-release" ]]
     then
-        yum install -y "${programs[@]}" || dnf install -y "${programs[@]}"
+        sudo yum install -y "${programs[@]}" || sudo dnf install -y "${programs[@]}"
     elif [[ -f "/etc/arch-release" ]]
     then
-        pacman -S --noconfirm "${programs[@]}"
+        sudo pacman -S --noconfirm "${programs[@]}"
     fi
 }
 
 function check_dependencies() {
-    local -a programs=("desktop-file-edit" "wine")
+    local -a programs=("sudo" "desktop-file-edit" "wine")
     local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
     local -a packages
 
@@ -127,7 +123,11 @@ function check_dependencies() {
     do
         if [[ -z $(type -P "${program}" 2>/dev/null) ]]
         then
-            if [[ "${program}" == "desktop-file-edit" ]]
+            if [[ "${program}" == "sudo" ]]
+            then
+                print "error" "${program} is required! Please it install it manually."
+                quit 1
+            elif [[ "${program}" == "desktop-file-edit" ]]
             then
                 packages+=("desktop-file-utils")
             else
@@ -148,30 +148,23 @@ function main() {
     local program="shortcutgen"
     local source="/usr/local/src/${program}.sh"
     local destination="/usr/local/bin/${program}"
-    local url="https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/shortcutgen.sh"
-
-    check_privileges
-    if ((${?} != 0))
-    then
-        print "error" "Run as root!"
-        quit 1
-    fi
+    local url="https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/shortcutgen.sh" # TODO: main issue
 
     check_dependencies
 
     print "information" "[*] Installing ShortcutGen..."
     if [[ -f "${source}" || ! -f "${source}" ]]
     then
-        rm -f "${source}" 2>/dev/null
+        sudo rm -f "${source}" 2>/dev/null
 
-        curl -sLo "${source}" "${url}"
-        chmod 755 "${source}"
+        sudo curl -sLo "${source}" "${url}"
+        sudo chmod 755 "${source}"
     fi
 
     if [[ -f "${destination}" || ! -f "${destination}" ]]
     then
-        ln -sf "${source}" "${destination}"
-        chmod 755 "${destination}"
+        sudo ln -sf "${source}" "${destination}"
+        sudo chmod 755 "${destination}"
     fi
 
     if [[ -f "${source}" && -f "${destination}" ]]
