@@ -192,7 +192,7 @@ function generate() {
 
         # Save the temporary PowerShell script then remove it after generation
         echo -e "${script}" > "${temporary_file}"
-        eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine pwsh.exe -ExecutionPolicy Bypass -File ${temporary_file}"
+        eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine pwsh.exe -ExecutionPolicy Bypass -File ${temporary_file} 2>/dev/null"
 
         print "completed" "Payload has been generated!"
         rm -f "${temporary_file}"
