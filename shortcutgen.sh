@@ -292,7 +292,7 @@ function generate() {
 }
 
 function usage() {
-    echo "Usage: ${0}
+    echo "Usage: $(basename ${0}) <flags>
 Flags:
     -p, --payload                       Specify a payload module ('lnk', 'desktop').
     -c, --command                       Specify a command to execute.

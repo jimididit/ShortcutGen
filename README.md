@@ -4,7 +4,7 @@
 
 ## Installation
 
-Run the installer as root. It'll install the required dependencies.
+Run the installer. It'll install the required dependencies.
 
 ```
 $ bash -c "$(curl --proto '=https' --tlsv1.2 -sSfL "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/install.sh")"

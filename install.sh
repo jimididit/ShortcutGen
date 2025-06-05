@@ -95,7 +95,7 @@ function install_powershell() {
             [[ -f ${file} ]] && rm -f "${file}"
             print "progress" "Downloading ${url}"
             curl -sLo "${file}" "${url}"
-            [[ -f ${file} ]] && print "completed" "Download completed: ${file}"
+            [[ -f ${file} ]] && print "completed" "Installer downloaded: ${file}"
             break
         fi
     done
