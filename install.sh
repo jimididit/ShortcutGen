@@ -43,7 +43,7 @@ function invoke_as() {
 function install_powershell() {
     local github_repository_api_url="https://api.github.com/repos/PowerShell/PowerShell/releases/latest"
     local response=$(curl -s "${github_repository_api_url}")
-    local file
+    local installer
     local artifacts
 
     function setup_wineprefix() {
@@ -91,19 +91,23 @@ function install_powershell() {
     do
         if [[ "${url}" == *"${pattern}"* ]]
         then
-            file=$(basename "${url}")
-            [[ -f ${file} ]] && rm -f "${file}"
-            print "progress" "Downloading ${url}"
-            curl -sLo "${file}" "${url}"
-            [[ -f ${file} ]] && print "completed" "Installer downloaded: ${file}"
+            installer=$(basename "${url}")
+            [[ -f "${installer}" ]] && rm -f "${installer}"
+            curl -sLo "${installer}" "${url}"
             break
         fi
     done
 
-    print "progress" "Installing Powershell..."
-    eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package ${file} /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
-    rm -f "${file}"
-    print "completed" "Powershell Installed!"
+    if [[ -f "${installer}" ]]
+	then
+    	print "progress" "Installing PowerShell..."
+    	eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package ${file} /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
+    	rm -f "${installer}"
+    	print "completed" "PowerShell Installed!"
+	else
+        print "error" "PowerShell installer not found! Please try again."
+		quit 1
+	fi
 }
 
 function install_packages() {
@@ -167,7 +171,7 @@ function main() {
 
     check_dependencies
 
-    print "information" "Installing ShortcutGen..."
+    print "progress" "Installing ShortcutGen..."
     [[ -f "${source}" ]] && sudo rm -f "${source}" 2>/dev/null
 
     while [[ "${response}" =~ \"browser_download_url\":\ *\"([^\"]+)\"(.*) ]]
@@ -186,9 +190,7 @@ function main() {
         then
             file=$(basename "${url}")
             [[ -f ${source} ]] && rm -f "${source}"
-            print "progress" "Downloading ${url}"
             invoke_as "curl -sLo '${source}' '${url}'"
-            [[ -f ${source} ]] && print "completed" "File downloaded: ${file}"
             break
         fi
     done
