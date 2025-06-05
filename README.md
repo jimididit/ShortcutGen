@@ -7,9 +7,9 @@
 Run the installer as root. It'll install the required dependencies.
 
 ```
-$ sudo bash -c "$(curl --proto '=https' --tlsv1.2 -sSfL "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/install.sh")"
+$ bash -c "$(curl --proto '=https' --tlsv1.2 -sSfL "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/install.sh")"
 
-$ sudo bash -c "$(wget -qO - "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/install.sh")"
+$ bash -c "$(wget -qO - "https://raw.githubusercontent.com/U53RW4R3/ShortcutGen/master/install.sh")"
 ```
 
 ## Help Menu
@@ -176,6 +176,16 @@ I could but I decided to implement a wrapper with `wine` which is much more suit
 ### Can I use the techniques for my project or other tradecraft for my own arsenal?
 
 It is highly encouraged of you to understand how the shortcut generator is being processed then outputted. The GNU GPLv3 copyleft license grants you the right to inspect the source code, modify it to your needs, and redistribute with your own copy along with the source code.
+
+## Troubleshooting
+
+### Uninstall
+
+To uninstall the programs.
+
+```
+$ sudo rm -f /usr/local/src/shortcutgen.sh /usr/local/bin/shortcutgen
+```
 
 ## References
 

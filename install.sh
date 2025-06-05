@@ -24,6 +24,22 @@ function quit() {
     exit "${code}"
 }
 
+function check_program() {
+    type -P "${1}" 2>/dev/null
+}
+
+function invoke_as() {
+    local commands="${1}"
+
+    if [[ -n $(check_program "sudo") ]]
+    then
+        eval "sudo ${commands}"
+    elif [[ -n $(check_program "doas") ]]
+    then
+        eval "doas ${commands}"
+    fi
+}
+
 function install_powershell() {
     local github_repository_api_url="https://api.github.com/repos/PowerShell/PowerShell/releases/latest"
     local response=$(curl -s "${github_repository_api_url}")
@@ -95,21 +111,21 @@ function install_packages() {
 
     if [[ -f "/etc/debian_version" ]]
     then
-        DEBIAN_FRONTEND=noninteractive sudo apt install -yqq "${programs[@]}"
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq '${programs[*]}'"
     elif [[ -f "/etc/fedora-release" ]]
     then
-        sudo dnf install -y "${programs[@]}"
+        invoke_as "dnf install -y '${programs[*]}'"
     elif [[ -f "/etc/redhat-release" ]]
     then
-        sudo yum install -y "${programs[@]}" || sudo dnf install -y "${programs[@]}"
+        invoke_as "yum install -y '${programs[*]}'" || invoke_as "dnf install -y '${programs[*]}'"
     elif [[ -f "/etc/arch-release" ]]
     then
-        sudo pacman -S --noconfirm "${programs[@]}"
+        invoke_as "pacman -S --noconfirm '${programs[*]}'"
     fi
 }
 
 function check_dependencies() {
-    local -a programs=("sudo" "desktop-file-edit" "wine")
+    local -a programs=("desktop-file-edit" "wine")
     local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
     local -a packages
 
@@ -121,13 +137,9 @@ function check_dependencies() {
 
     for program in "${programs[@]}"
     do
-        if [[ -z $(type -P "${program}" 2>/dev/null) ]]
+        if [[ -z $(check_program "${program}") ]]
         then
-            if [[ "${program}" == "sudo" ]]
-            then
-                print "error" "${program} is required! Please it install it manually."
-                quit 1
-            elif [[ "${program}" == "desktop-file-edit" ]]
+            if [[ "${program}" == "desktop-file-edit" ]]
             then
                 packages+=("desktop-file-utils")
             else
@@ -157,15 +169,15 @@ function main() {
 
     print "information" "Installing ShortcutGen..."
     [[ -f "${source}" ]] && sudo rm -f "${source}" 2>/dev/null
-    
+
     while [[ "${response}" =~ \"browser_download_url\":\ *\"([^\"]+)\"(.*) ]]
     do
         artifacts+="${BASH_REMATCH[1]}"$'\n'
         response="${BASH_REMATCH[2]}"
     done
-    
+
     artifacts=${artifacts%$'\n'}
-    
+
     local -a urls=(${artifacts})
 
     for url in "${urls[@]}"
@@ -175,18 +187,18 @@ function main() {
             file=$(basename "${url}")
             [[ -f ${source} ]] && rm -f "${source}"
             print "progress" "Downloading ${url}"
-            sudo curl -sLo "${source}" "${url}"
+            invoke_as "curl -sLo '${source}' '${url}'"
             [[ -f ${source} ]] && print "completed" "File downloaded: ${file}"
             break
         fi
     done
 
-    sudo chmod 755 "${source}"
+    invoke_as "chmod 755 '${source}'"
 
     if [[ -f "${destination}" || ! -f "${destination}" ]]
     then
-        sudo ln -sf "${source}" "${destination}"
-        sudo chmod 755 "${destination}"
+        invoke_as "ln -sf '${source}' '${destination}'"
+        invoke_as "chmod 755 '${destination}'"
     fi
 
     if [[ -f "${source}" && -f "${destination}" ]]

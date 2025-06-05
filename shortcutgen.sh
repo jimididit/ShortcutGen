@@ -22,6 +22,10 @@ function quit() {
     exit "${1}"
 }
 
+function check_program() {
+    type -P "${1}" 2>/dev/null
+}
+
 function check_dependencies() {
     local -a programs=("getopt" "wine" "desktop-file-edit")
     local -a missing
@@ -35,7 +39,7 @@ function check_dependencies() {
 
     for program in "${programs[@]}"
     do
-        if [[ -z $(type -P "${program}" 2>/dev/null) ]]
+        if [[ -z $(check_program "${program}") ]]
         then
             if [[ "${program}" == "getopt" ]]
             then
