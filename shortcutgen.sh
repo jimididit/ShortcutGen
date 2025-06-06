@@ -307,13 +307,13 @@ Flags:
     -n, --name                          Specify a name. It is optional when 'lnk'
                                         payload module is specified (applies with -h flag).
                                         For 'desktop' payload module it is mandatory.
-    --icon                         Specify a custom icon.
+    --icon                              Specify a custom icon.
     -w, --window                        Specify a window. For 'lnk' payload windowstyle
                                         'normal' is set by default if not specified.
                                         The available windowstyles are: 'normal', 'maximized',
                                         and 'minimized'. For 'desktop' payload it is set to
                                         'false', the available options are: 'true' and 'false'.
-    --workingdirectory             Specify a working directory.
+    --workingdirectory                  Specify a working directory.
     -o, --output                        Specify an output.
     -v, --version                       Display the program's version number.
     -h, --help                          Display the help menu."
@@ -408,7 +408,7 @@ function main() {
     trap quit SIGINT
     check_dependencies
 
-    ((VERSION == 1)) && echo "${0} version: v2.0"
+    ((VERSION == 1)) && echo "${0} version: v1.0"
 
     if [[ -n "${OUTPUT}" ]]
     then
