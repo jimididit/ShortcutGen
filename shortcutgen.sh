@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-WINEPREFIX_DIRECTORY="${HOME}/.wine"
-
 function print() {
     local status="${1}"
     local message="${2}"
@@ -327,6 +325,8 @@ function main() {
     local options="p:c:a:i:e:s:n:d:w:o:v:h"
     local long_options="payload:,command:,arguments:,ip:,environment:,share:,name:,description:,icon:,window:,workingdirectory:,output:,version:,help"
     local parsed_options=$(getopt -o "${options}" -l "${long_options}" -n "$(basename "${0}")" -- "${@}")
+    
+    WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
     if ((${?} != 0))
     then
