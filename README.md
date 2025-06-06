@@ -175,7 +175,7 @@ I could but I decided to implement a wrapper with `wine` which is much more suit
 
 ### I want to understand how the Windows shell link works. Is there a technical whitepaper that does help me to make my own library?
 
-The official Microsoft's own **MS-SHLLINK binary file format** can found [here](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943?redirectedfrom=MSDN)
+The official Microsoft's own **MS-SHLLINK binary file format** can found [here](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943?redirectedfrom=MSDN).
 
 ### Can I use the techniques for my project or other tradecraft for my own arsenal?
 
