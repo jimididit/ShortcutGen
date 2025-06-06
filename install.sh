@@ -1,7 +1,5 @@
 #!/bin/bash
 
-WINEPREFIX_DIRECTORY="${HOME}/.wine"
-
 function print() {
     local status="${1}"
     local message="${2}"
@@ -168,6 +166,8 @@ function main() {
     local github_repository_api_url="https://api.github.com/repos/U53RW4R3/ShortcutGen/releases/latest"
     local response=$(curl -s "${github_repository_api_url}")
     local artifacts
+    
+    WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
     check_dependencies
 
