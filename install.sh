@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Immediately enable “strict mode” so that:
+#  - any unbound variable causes an error (-u)
+#  - any failed command causes an exit (-e)
+#  - any failure in a pipeline causes the pipeline to fail (-o pipefail)
+set -euo pipefail
+
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
 function print() {
@@ -137,7 +143,7 @@ function check_dependencies() {
     done
 
     print "progress" "Installing necessary packages..."
-    install_packages "${packages[*]}"
+    install_packages "${packages[@]}"
 
     shopt -s nullglob
     [[ ! -f "${powershell[0]}" ]] && install_powershell

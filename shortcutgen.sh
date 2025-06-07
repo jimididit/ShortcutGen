@@ -1,6 +1,28 @@
 #!/usr/bin/env bash
 
+# Immediately enable “strict mode” so that:
+#  - any unbound variable causes an error (-u)
+#  - any failed command causes an exit (-e)
+#  - any failure in a pipeline causes the pipeline to fail (-o pipefail)
+set -euo pipefail
+
+VERSION=1    # <–– initialize VERSION to avoid unbound errors under strict mode
+
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
+
+# Initialize variables to avoid unbound errors under strict mode:
+ARGUMENTS=""          # will be tested with [[ -n "${ARGUMENTS}" ]]
+COMMAND=""            # will be tested with [[ -n "${COMMAND}" ]]
+IP=""                 # tested if -p lnk
+ENVIRONMENT=""        # tested in LNK branch
+SHARE=""              # tested in LNK branch
+FILENAME=""           # tested if -p desktop
+DESCRIPTION=""        # tested if -n "${DESCRIPTION}"
+ICON=""               # tested if -n "${ICON}"
+WINDOW=""             # tested if -w ${WINDOW}
+WORKINGDIRECTORY=""   # tested if -n "${WORKINGDIRECTORY}"
+OUTPUT=""             # tested if -n "${OUTPUT}"
+PAYLOAD=""            # tested if -n "${PAYLOAD}"
 
 function print() {
     local status="${1}"
@@ -24,7 +46,7 @@ function quit() {
 
 function check_dependencies() {
     local -a programs=("getopt" "wine" "desktop-file-edit")
-    local -a missing
+    local -a missing=() # <–– initialize missing to avoid unbound errors under strict mode
     local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
 
     if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
@@ -53,7 +75,7 @@ function check_dependencies() {
     [[ ! -f "${powershell[0]}" ]] && missing+=("powershell")
     shopt -u nullglob
 
-    if ((${#missing} > 0))
+    if ((${#missing[@]} > 0)) # <–– if missing is not empty, print an error and quit
     then
         print "error" "Required dependencies: ${missing[*]}"
         quit 1
@@ -205,7 +227,7 @@ function generate() {
             arguments+=("--set-key='Version'")
             arguments+=("--set-value='1.0'")
         else
-            error "Name must be passed!"
+            print "error" "Name must be passed!"
             quit 1
         fi
 
@@ -218,13 +240,19 @@ function generate() {
             arguments+=("--set-key='Exec'")
             arguments+=("--set-value='${COMMAND}'")
         else
-            error "At least command and/or arguments must be passed!"
+            print "error" "At least command and/or arguments must be passed!"
             quit 1
         fi
 
         if [[ -n "${DESCRIPTION}" ]]
         then
             arguments+=("--set-comment='${DESCRIPTION}'")
+        fi
+
+        if (( ${#ARGUMENTS} >= 260 ))
+        then
+            print "error" "Arguments must not exceed more than 260 characters"
+            quit 1
         fi
 
         if [[ -n "${WORKINGDIRECTORY}" ]]
