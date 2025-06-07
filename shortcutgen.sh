@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
-# Immediately enable “strict mode” so that:
-#  - any unbound variable causes an error (-u)
-#  - any failed command causes an exit (-e)
-#  - any failure in a pipeline causes the pipeline to fail (-o pipefail)
+: <<-'COMMENT'
+Immediately enable "strict mode" so that:
+    - any unbound variable causes an error (-u)
+    - any failed command causes an exit (-e)
+    - any failure in a pipeline causes the pipeline to fail (-o pipefail)
+COMMENT
 set -euo pipefail
 
-VERSION=1    # <–– initialize VERSION to avoid unbound errors under strict mode
-
 # Initialize variables to avoid unbound errors under strict mode:
+VERSION=1
 ARGUMENTS=""
 COMMAND=""
 IP=""
@@ -48,7 +49,7 @@ function check_program() {
 
 function check_dependencies() {
     local -a programs=("getopt" "wine" "desktop-file-edit")
-    local -a missing=() # <–– initialize missing to avoid unbound errors under strict mode
+    local -a missing=()
     local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
 
     if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
@@ -77,7 +78,7 @@ function check_dependencies() {
     [[ ! -f "${powershell[0]}" ]] && missing+=("powershell")
     shopt -u nullglob
 
-    if ((${#missing[@]} > 0)) # <–– if missing is not empty, print an error and quit
+    if ((${#missing[@]} > 0))
     then
         print "error" "Required dependencies: ${missing[*]}"
         quit 1
@@ -134,9 +135,7 @@ function generate() {
                 print "error" "Command and arguments must be passed!"
                 quit 1
             fi
-
-        # check if IP is passed if command is not passed
-        elif [[ -n "${IP}" ]]
+        elif [[ -n "${IP}" ]] # check if IP is passed if command is not passed
         then
             local unc
             if [[ -z "${SHARE}" ]]
@@ -191,9 +190,8 @@ function generate() {
         if [[ -n "${ICON}" ]]
         then
             script+="\$Shortcut.IconLocation = '${ICON}'\n"
-        elif [[ -z "${ICON}" ]]
+        elif [[ -z "${ICON}" ]] # Will set to control panel icon by default
         then
-            # Will set to control panel icon by default
             script+="\$Shortcut.IconLocation = 'shell32.dll,21'\n"
         fi
 
@@ -278,9 +276,8 @@ function generate() {
         then
             arguments+=("--set-key=\"Terminal\"")
             arguments+=("--set-value=\"false\"")
-        elif [[ -n "${WINDOW}" ]]
+        elif [[ -n "${WINDOW}" ]] # Make the application run in terminal if set to true otherwise false
         then
-            # Make the application run in terminal if set to true otherwise false
             if [[ "${WINDOW}" == "true" || "${WINDOW}" == "false" ]]
             then
                 arguments+=("--set-key=\"Terminal\"")
@@ -359,8 +356,6 @@ function main() {
     local options="p:c:a:i:e:s:n:d:w:o:v:h"
     local long_options="payload:,command:,arguments:,ip:,environment:,share:,name:,description:,icon:,window:,workingdirectory:,output:,version:,help"
     local parsed_options=$(getopt -o "${options}" -l "${long_options}" -n "$(basename "${0}")" -- "${@}")
-    
-    WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
     if ((${?} != 0))
     then
@@ -445,11 +440,14 @@ function main() {
     ((VERSION == 1)) && echo "${0} version: v1.0"
 
     # Require either -c or -i (but not both) for 'lnk' payloads
-    if [[ "${PAYLOAD}" == "lnk" ]]; then
-        if [[ -n "${COMMAND}" && -n "${IP}" ]]; then
+    if [[ "${PAYLOAD}" == "lnk" ]]
+    then
+        if [[ -n "${COMMAND}" && -n "${IP}" ]]
+        then
             print "error" "Cannot use both -c (command) and -i (IP) together for 'lnk' payload. Choose one."
             quit 1
-        elif [[ -z "${COMMAND}" && -z "${IP}" ]]; then
+        elif [[ -z "${COMMAND}" && -z "${IP}" ]]
+        then
             print "error" "You must provide either -c (command) or -i (IP) for 'lnk' payload."
             quit 1
         fi

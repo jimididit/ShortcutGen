@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# Immediately enable “strict mode” so that:
-#  - any unbound variable causes an error (-u)
-#  - any failed command causes an exit (-e)
-#  - any failure in a pipeline causes the pipeline to fail (-o pipefail)
+: <<-'COMMENT'
+Immediately enable "strict mode" so that:
+    - any unbound variable causes an error (-u)
+    - any failed command causes an exit (-e)
+    - any failure in a pipeline causes the pipeline to fail (-o pipefail)
+COMMENT
 set -euo pipefail
 
 # Set the WINEPREFIX_DIRECTORY to the user's home directory
@@ -177,8 +179,6 @@ function main() {
     local github_repository_api_url="https://api.github.com/repos/U53RW4R3/ShortcutGen/releases/latest"
     local response=$(curl -s "${github_repository_api_url}")
     local artifacts
-    
-    # WINEPREFIX_DIRECTORY="${HOME}/.wine" <-- moved to top of file
 
     check_dependencies
 
