@@ -6,8 +6,6 @@
 #  - any failure in a pipeline causes the pipeline to fail (-o pipefail)
 set -euo pipefail
 
-WINEPREFIX_DIRECTORY="${HOME}/.wine"
-
 function print() {
     local status="${1}"
     local message="${2}"
@@ -30,10 +28,26 @@ function quit() {
     exit "${code}"
 }
 
+function check_program() {
+    type -P "${1}" 2>/dev/null
+}
+
+function invoke_as() {
+    local commands="${1}"
+
+    if [[ -n $(check_program "sudo") ]]
+    then
+        eval "sudo ${commands}"
+    elif [[ -n $(check_program "doas") ]]
+    then
+        eval "doas ${commands}"
+    fi
+}
+
 function install_powershell() {
     local github_repository_api_url="https://api.github.com/repos/PowerShell/PowerShell/releases/latest"
     local response=$(curl -s "${github_repository_api_url}")
-    local file
+    local installer
     local artifacts
 
     function setup_wineprefix() {
@@ -81,19 +95,23 @@ function install_powershell() {
     do
         if [[ "${url}" == *"${pattern}"* ]]
         then
-            file=$(basename "${url}")
-            [[ -f ${file} ]] && rm -f "${file}"
-            print "progress" "Downloading ${url}"
-            curl -sLo "${file}" "${url}"
-            [[ -f ${file} ]] && print "completed" "Download completed: ${file}"
+            installer=$(basename "${url}")
+            [[ -f "${installer}" ]] && rm -f "${installer}"
+            curl -sLo "${installer}" "${url}"
             break
         fi
     done
 
-    print "progress" "Installing Powershell..."
-    eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package ${file} /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
-    rm -f "${file}"
-    print "completed" "Powershell Installed!"
+    if [[ -f "${installer}" ]]
+	then
+    	print "progress" "Installing PowerShell..."
+    	eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package ${file} /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
+    	rm -f "${installer}"
+    	print "completed" "PowerShell Installed!"
+	else
+        print "error" "PowerShell installer not found! Please try again."
+		quit 1
+	fi
 }
 
 function install_packages() {
@@ -101,21 +119,21 @@ function install_packages() {
 
     if [[ -f "/etc/debian_version" ]]
     then
-        DEBIAN_FRONTEND=noninteractive sudo apt install -yqq "${programs[@]}"
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq '${programs[*]}'"
     elif [[ -f "/etc/fedora-release" ]]
     then
-        sudo dnf install -y "${programs[@]}"
+        invoke_as "dnf install -y '${programs[*]}'"
     elif [[ -f "/etc/redhat-release" ]]
     then
-        sudo yum install -y "${programs[@]}" || sudo dnf install -y "${programs[@]}"
+        invoke_as "yum install -y '${programs[*]}'" || invoke_as "dnf install -y '${programs[*]}'"
     elif [[ -f "/etc/arch-release" ]]
     then
-        sudo pacman -S --noconfirm "${programs[@]}"
+        invoke_as "pacman -S --noconfirm '${programs[*]}'"
     fi
 }
 
 function check_dependencies() {
-    local -a programs=("sudo" "desktop-file-edit" "wine")
+    local -a programs=("desktop-file-edit" "wine")
     local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
     local -a packages
 
@@ -127,13 +145,9 @@ function check_dependencies() {
 
     for program in "${programs[@]}"
     do
-        if [[ -z $(type -P "${program}" 2>/dev/null) ]]
+        if [[ -z $(check_program "${program}") ]]
         then
-            if [[ "${program}" == "sudo" ]]
-            then
-                print "error" "${program} is required! Please it install it manually."
-                quit 1
-            elif [[ "${program}" == "desktop-file-edit" ]]
+            if [[ "${program}" == "desktop-file-edit" ]]
             then
                 packages+=("desktop-file-utils")
             else
@@ -158,20 +172,22 @@ function main() {
     local github_repository_api_url="https://api.github.com/repos/U53RW4R3/ShortcutGen/releases/latest"
     local response=$(curl -s "${github_repository_api_url}")
     local artifacts
+    
+    WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
     check_dependencies
 
-    print "information" "Installing ShortcutGen..."
+    print "progress" "Installing ShortcutGen..."
     [[ -f "${source}" ]] && sudo rm -f "${source}" 2>/dev/null
-    
+
     while [[ "${response}" =~ \"browser_download_url\":\ *\"([^\"]+)\"(.*) ]]
     do
         artifacts+="${BASH_REMATCH[1]}"$'\n'
         response="${BASH_REMATCH[2]}"
     done
-    
+
     artifacts=${artifacts%$'\n'}
-    
+
     local -a urls=(${artifacts})
 
     for url in "${urls[@]}"
@@ -180,19 +196,17 @@ function main() {
         then
             file=$(basename "${url}")
             [[ -f ${source} ]] && rm -f "${source}"
-            print "progress" "Downloading ${url}"
-            sudo curl -sLo "${source}" "${url}"
-            [[ -f ${source} ]] && print "completed" "File downloaded: ${file}"
+            invoke_as "curl -sLo '${source}' '${url}'"
             break
         fi
     done
 
-    sudo chmod 755 "${source}"
+    invoke_as "chmod 755 '${source}'"
 
     if [[ -f "${destination}" || ! -f "${destination}" ]]
     then
-        sudo ln -sf "${source}" "${destination}"
-        sudo chmod 755 "${destination}"
+        invoke_as "ln -sf '${source}' '${destination}'"
+        invoke_as "chmod 755 '${destination}'"
     fi
 
     if [[ -f "${source}" && -f "${destination}" ]]
