@@ -31,6 +31,7 @@ Flags:
     -n, --name                          Specify a name. It is optional when 'lnk'
                                         payload module is specified (applies with -h flag).
                                         For 'desktop' payload module it is mandatory.
+    -d, --description                   Specify the description of the payload.
     --icon                              Specify a custom icon.
     -w, --window                        Specify a window. For 'lnk' payload windowstyle
                                         'normal' is set by default if not specified.
