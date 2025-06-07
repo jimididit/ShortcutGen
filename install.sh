@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Immediately enable “strict mode” so that:
+#  - any unbound variable causes an error (-u)
+#  - any failed command causes an exit (-e)
+#  - any failure in a pipeline causes the pipeline to fail (-o pipefail)
+set -euo pipefail
+
+# Set the WINEPREFIX_DIRECTORY to the user's home directory
+WINEPREFIX_DIRECTORY="${HOME}/.wine"
+
 function print() {
     local status="${1}"
     local message="${2}"
@@ -91,7 +100,7 @@ function install_powershell() {
         then
             installer=$(basename "${url}")
             [[ -f "${installer}" ]] && rm -f "${installer}"
-            curl -sLo "${installer}" "${url}"
+            invoke_as "curl -sLo '${installer}' '${url}'"
             break
         fi
     done
@@ -99,7 +108,7 @@ function install_powershell() {
     if [[ -f "${installer}" ]]
 	then
     	print "progress" "Installing PowerShell..."
-    	eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package ${file} /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
+    	eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package \"${installer}\" /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
     	rm -f "${installer}"
     	print "completed" "PowerShell Installed!"
 	else
@@ -113,16 +122,17 @@ function install_packages() {
 
     if [[ -f "/etc/debian_version" ]]
     then
-        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq '${programs[*]}'"
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt update -qq" # Refresh package list before installing
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq ${programs[@]}"
     elif [[ -f "/etc/fedora-release" ]]
     then
-        invoke_as "dnf install -y '${programs[*]}'"
+        invoke_as "dnf install -y ${programs[@]}"
     elif [[ -f "/etc/redhat-release" ]]
     then
-        invoke_as "yum install -y '${programs[*]}'" || invoke_as "dnf install -y '${programs[*]}'"
+        invoke_as "yum install -y ${programs[@]}" || invoke_as "dnf install -y ${programs[@]}"
     elif [[ -f "/etc/arch-release" ]]
     then
-        invoke_as "pacman -S --noconfirm '${programs[*]}'"
+        invoke_as "pacman -S --noconfirm ${programs[@]}"
     fi
 }
 
@@ -151,7 +161,8 @@ function check_dependencies() {
     done
 
     print "progress" "Installing necessary packages..."
-    install_packages "${packages[*]}"
+
+    install_packages "${packages[@]}"
 
     shopt -s nullglob
     [[ ! -f "${powershell[0]}" ]] && install_powershell
@@ -167,7 +178,7 @@ function main() {
     local response=$(curl -s "${github_repository_api_url}")
     local artifacts
     
-    WINEPREFIX_DIRECTORY="${HOME}/.wine"
+    # WINEPREFIX_DIRECTORY="${HOME}/.wine" <-- moved to top of file
 
     check_dependencies
 
