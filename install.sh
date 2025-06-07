@@ -119,16 +119,17 @@ function install_packages() {
 
     if [[ -f "/etc/debian_version" ]]
     then
-        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq '${programs[*]}'"
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt update -qq" # Refresh package list before installing
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq ${programs[@]}"
     elif [[ -f "/etc/fedora-release" ]]
     then
-        invoke_as "dnf install -y '${programs[*]}'"
+        invoke_as "dnf install -y ${programs[@]}"
     elif [[ -f "/etc/redhat-release" ]]
     then
-        invoke_as "yum install -y '${programs[*]}'" || invoke_as "dnf install -y '${programs[*]}'"
+        invoke_as "yum install -y ${programs[@]}" || invoke_as "dnf install -y ${programs[@]}"
     elif [[ -f "/etc/arch-release" ]]
     then
-        invoke_as "pacman -S --noconfirm '${programs[*]}'"
+        invoke_as "pacman -S --noconfirm ${programs[@]}"
     fi
 }
 
@@ -157,6 +158,7 @@ function check_dependencies() {
     done
 
     print "progress" "Installing necessary packages..."
+
     install_packages "${packages[@]}"
 
     shopt -s nullglob
