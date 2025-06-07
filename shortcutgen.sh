@@ -8,6 +8,9 @@ Immediately enable "strict mode" so that:
 COMMENT
 set -euo pipefail
 
+# Set the WINEPREFIX_DIRECTORY to the user's home directory
+WINEPREFIX_DIRECTORY="${HOME}/.wine"
+
 # Initialize variables to avoid unbound errors under strict mode:
 VERSION=1
 ARGUMENTS=""
