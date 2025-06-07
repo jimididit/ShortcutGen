@@ -10,6 +10,7 @@ set -euo pipefail
 
 # Set the WINEPREFIX_DIRECTORY to the user's home directory
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
+GITHUB_REPOSITORY_API="https://api.github.com/repos"
 
 function print() {
     local status="${1}"
@@ -50,8 +51,8 @@ function invoke_as() {
 }
 
 function install_powershell() {
-    local github_repository_api_url="https://api.github.com/repos/PowerShell/PowerShell/releases/latest"
-    local response=$(curl -s "${github_repository_api_url}")
+    local repository="${GITHUB_REPOSITORY_API}/PowerShell/PowerShell/releases/latest"
+    local response=$(curl -s "${repository}")
     local installer
     local artifacts
 
@@ -125,16 +126,16 @@ function install_packages() {
     if [[ -f "/etc/debian_version" ]]
     then
         invoke_as "DEBIAN_FRONTEND=noninteractive apt update -qq" # Refresh package list before installing
-        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq ${programs[@]}"
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq ${programs[*]}"
     elif [[ -f "/etc/fedora-release" ]]
     then
-        invoke_as "dnf install -y ${programs[@]}"
+        invoke_as "dnf install -y ${programs[*]}"
     elif [[ -f "/etc/redhat-release" ]]
     then
-        invoke_as "yum install -y ${programs[@]}" || invoke_as "dnf install -y ${programs[@]}"
+        invoke_as "yum install -y ${programs[*]}" || invoke_as "dnf install -y ${programs[*]}"
     elif [[ -f "/etc/arch-release" ]]
     then
-        invoke_as "pacman -S --noconfirm ${programs[@]}"
+        invoke_as "pacman -S --noconfirm ${programs[*]}"
     fi
 }
 
@@ -176,8 +177,8 @@ function main() {
     local source="/usr/local/src/${program}.sh"
     local destination="/usr/local/bin/${program}"
     local pattern="${program}.sh"
-    local github_repository_api_url="https://api.github.com/repos/U53RW4R3/ShortcutGen/releases/latest"
-    local response=$(curl -s "${github_repository_api_url}")
+    local repository="${GITHUB_REPOSITORY_API}/U53RW4R3/ShortcutGen/releases/latest"
+    local response=$(curl -s "${repository}")
     local artifacts
 
     check_dependencies

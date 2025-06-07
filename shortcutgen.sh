@@ -103,7 +103,6 @@ function random_string() {
 function generate() {
     local payload="${1}"
 
-
     function shell_link() {
         local -A windowstyle=(
             [normal]=1
