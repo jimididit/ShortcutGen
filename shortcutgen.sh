@@ -134,8 +134,13 @@ function generate() {
                 print "error" "Command and arguments must be passed!"
                 quit 1
             fi
-        elif [[ -n "${IP}" ]]
+        fi
+
+        if [[ -z "${IP}" ]]
         then
+            print "error" "IP parameter must at least be passed!"
+            quit 1
+        else
             local unc
             if [[ -z "${SHARE}" ]]
             then
@@ -174,9 +179,6 @@ function generate() {
 
             script+="\$Shortcut.TargetPath = 'C:/Windows/explorer.exe'\n"
             script+="\$Shortcut.Arguments = '/root,\"\\${unc}\"'\n"
-        else
-            print "error" "IP parameter must at least be passed!"
-            quit 1
         fi
 
         if [[ -n "${DESCRIPTION}" ]]
@@ -194,11 +196,13 @@ function generate() {
             script+="\$Shortcut.IconLocation = 'shell32.dll,21'\n"
         fi
 
-        if [[ -z "${WINDOW}" ]]
+        if [[ -n "${WINDOW}" ]]
         then
-            script+="\$Shortcut.WindowStyle = ${windowstyle['normal']}\n"
-        elif [[ -n "${WINDOW}" ]]
-        then
+            if [[ -z "${windowstyle[${WINDOW}]+_}" ]]
+            then
+                print "error" "Invalid window style: ${WINDOW}"
+                quit 1
+            fi
             script+="\$Shortcut.WindowStyle = ${windowstyle[${WINDOW}]}\n"
         fi
 
