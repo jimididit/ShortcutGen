@@ -12,7 +12,7 @@ set -euo pipefail
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
 # Initialize variables to avoid unbound errors under strict mode:
-VERSION=1
+VERSION=
 ARGUMENTS=""
 COMMAND=""
 IP=""
