@@ -437,7 +437,7 @@ function main() {
     trap quit SIGINT
     check_dependencies
 
-    ((VERSION == 1)) && echo "${0} version: v1.0"
+    ((VERSION == 1)) && echo "${0} version: v1.1"
 
     # Require either -c or -i (but not both) for 'lnk' payloads
     if [[ "${PAYLOAD}" == "lnk" ]]
