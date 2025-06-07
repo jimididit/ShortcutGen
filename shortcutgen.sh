@@ -112,6 +112,7 @@ function generate() {
             [maximized]=3
             [minimized]=7
         )
+        local command="${COMMAND//\\/\\\\}"
         local temp
         local temporary_file
         local script
@@ -126,7 +127,7 @@ function generate() {
         then
             if [[ -n "${ARGUMENTS}" && "${#ARGUMENTS}" -lt 260 ]]
             then
-                script+="\$Shortcut.TargetPath = '${COMMAND}'\n"
+                script+="\$Shortcut.TargetPath = '${command}'\n"
                 script+="\$Shortcut.Arguments = '${ARGUMENTS}'\n"
             elif (("${#ARGUMENTS}" >= 260))
             then
