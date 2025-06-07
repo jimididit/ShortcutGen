@@ -9,18 +9,18 @@ set -euo pipefail
 VERSION=1    # <–– initialize VERSION to avoid unbound errors under strict mode
 
 # Initialize variables to avoid unbound errors under strict mode:
-ARGUMENTS=""          # will be tested with [[ -n "${ARGUMENTS}" ]]
-COMMAND=""            # will be tested with [[ -n "${COMMAND}" ]]
-IP=""                 # tested if -p lnk
-ENVIRONMENT=""        # tested in LNK branch
-SHARE=""              # tested in LNK branch
-FILENAME=""           # tested if -p desktop
-DESCRIPTION=""        # tested if -n "${DESCRIPTION}"
-ICON=""               # tested if -n "${ICON}"
-WINDOW=""             # tested if -w ${WINDOW}
-WORKINGDIRECTORY=""   # tested if -n "${WORKINGDIRECTORY}"
-OUTPUT=""             # tested if -n "${OUTPUT}"
-PAYLOAD=""            # tested if -n "${PAYLOAD}"
+ARGUMENTS=""
+COMMAND=""
+IP=""
+ENVIRONMENT=""
+SHARE=""
+NAME=""
+DESCRIPTION=""
+ICON=""
+WINDOW=""
+WORKINGDIRECTORY=""
+OUTPUT=""
+PAYLOAD=""
 
 function print() {
     local status="${1}"
@@ -225,7 +225,8 @@ function generate() {
         then
             arguments+=("--set-key='Encoding'")
             arguments+=("--set-value='UTF-8'")
-            arguments+=("--set-name='${NAME}'")
+            arguments+=("--set-key='Name'")
+            arguments+=("--set-value='${NAME}'")
             arguments+=("--set-key='Version'")
             arguments+=("--set-value='1.0'")
         else
