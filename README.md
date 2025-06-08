@@ -196,6 +196,8 @@ $ sudo rm -f /usr/local/src/shortcutgen.sh /usr/local/bin/shortcutgen
 
 - [\[MS-SHLLINK\]: Shell Link (.LNK) Binary File Format](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943?redirectedfrom=MSDN)
 
+- [Exiftool: LNK Tags](https://exiftool.org/TagNames/LNK.html)
+
 - [lnk2pwn](https://github.com/it-gorillaz/lnk2pwn)
 
 - [MisterioLNK](https://github.com/K3rnel-Dev/MisterioLNK)
