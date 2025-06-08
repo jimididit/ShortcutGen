@@ -125,7 +125,6 @@ function install_packages() {
 
     if [[ -f "/etc/debian_version" ]]
     then
-        invoke_as "DEBIAN_FRONTEND=noninteractive apt update -qq" # Refresh package list before installing
         invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq ${programs[*]}"
     elif [[ -f "/etc/fedora-release" ]]
     then
