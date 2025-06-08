@@ -32,10 +32,9 @@ function print() {
     local color
 
     case "${status}" in
-        information) color="\033[34m[*]\033[0m" ;;  # Blue
-        progress) color="\033[1;34m[*]\033[0m" ;;   # Bold Blue
-        completed) color="\033[1;32m[+]\033[0m" ;;  # Bold Green
-        error) color="\033[1;31m[-]\033[0m" ;;      # Bold Red
+        information) color="\033[1;34m[*]\033[0m" ;;    # Bold Blue
+        completed) color="\033[1;32m[+]\033[0m" ;;      # Bold Green
+        error) color="\033[1;31m[-]\033[0m" ;;          # Bold Red
     esac
 
     echo -e "${color} ${message}"

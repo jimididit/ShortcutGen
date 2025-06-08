@@ -18,10 +18,9 @@ function print() {
     local color
 
     case "${status}" in
-        information) color="\033[34m[*]\033[0m" ;;  # Blue
-        progress) color="\033[1;34m[*]\033[0m" ;;   # Bold Blue
-        completed) color="\033[1;32m[+]\033[0m" ;;  # Bold Green
-        error) color="\033[1;31m[-]\033[0m" ;;      # Bold Red
+        information) color="\033[1;34m[*]\033[0m" ;;    # Bold Blue
+        completed) color="\033[1;32m[+]\033[0m" ;;      # Bold Green
+        error) color="\033[1;31m[-]\033[0m" ;;          # Bold Red
     esac
 
     echo -e "${color} ${message}"
@@ -59,16 +58,16 @@ function install_powershell() {
     function setup_wineprefix() {
         if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
         then
-            print "progress" "Creating a WINEPREFIX directory in '${WINEPREFIX_DIRECTORY}'"
+            print "information" "Creating a WINEPREFIX directory in '${WINEPREFIX_DIRECTORY}'"
             mkdir "${WINEPREFIX_DIRECTORY}"
         fi
 
         if [[ "${HOSTTYPE}" == "x86_64" ]]
         then
-            print "progress" "Configuring wine directory with the latest version of Windows..."
+            print "information" "Configuring wine directory with the latest version of Windows..."
             eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' winecfg /v win11 &>/dev/null"
 
-            print "progress" "Initializing wine directory..."
+            print "information" "Initializing wine directory..."
             eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wineboot -u &>/dev/null"
         else
             print "error" "x86_64 (64-bit) architecture is only supported!"
@@ -78,7 +77,7 @@ function install_powershell() {
 
     setup_wineprefix
 
-    print "progress" "Fetching latest PowerShell release URLs..."
+    print "information" "Fetching latest PowerShell release URLs..."
     while [[ "${response}" =~ \"browser_download_url\":\ *\"([^\"]+)\"(.*) ]]
     do
         artifacts+="${BASH_REMATCH[1]}"$'\n'
@@ -110,7 +109,7 @@ function install_powershell() {
 
     if [[ -f "${installer}" ]]
 	then
-    	print "progress" "Installing PowerShell..."
+    	print "information" "Installing PowerShell..."
     	eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package \"${installer}\" /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
     	rm -f "${installer}"
     	print "completed" "PowerShell Installed!"
@@ -145,7 +144,7 @@ function check_dependencies() {
 
     if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
     then
-        print "progress" "Creating directory: ${WINEPREFIX_DIRECTORY}."
+        print "information" "Creating directory: ${WINEPREFIX_DIRECTORY}."
         mkdir "${WINEPREFIX_DIRECTORY}"
     fi
 
@@ -164,7 +163,7 @@ function check_dependencies() {
 
     if ((${#packages[@]} > 0))
     then
-        print "progress" "Installing necessary packages..."
+        print "information" "Installing necessary packages..."
         install_packages "${packages[@]}"
     fi
 
@@ -184,7 +183,7 @@ function main() {
 
     check_dependencies
 
-    print "progress" "Installing ShortcutGen..."
+    print "information" "Installing ShortcutGen..."
     [[ -f "${source}" ]] && sudo rm -f "${source}" 2>/dev/null
 
     while [[ "${response}" =~ \"browser_download_url\":\ *\"([^\"]+)\"(.*) ]]
