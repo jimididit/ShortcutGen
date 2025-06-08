@@ -15,7 +15,7 @@ GITHUB_REPOSITORY_API="https://api.github.com/repos"
 function print() {
     local status="${1}"
     local message="${2}"
-    local color
+    local color=""
 
     case "${status}" in
         information) color="\033[1;34m[*]\033[0m" ;;    # Bold Blue
@@ -52,8 +52,8 @@ function invoke_as() {
 function install_powershell() {
     local repository="${GITHUB_REPOSITORY_API}/PowerShell/PowerShell/releases/latest"
     local response=$(curl -s "${repository}")
-    local installer
-    local artifacts
+    local installer=""
+    local artifacts=""
 
     function setup_wineprefix() {
         if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
@@ -77,7 +77,7 @@ function install_powershell() {
 
     setup_wineprefix
 
-    print "information" "Fetching latest PowerShell release URLs..."
+    print "information" "Fetching latest PowerShell release..."
     while [[ "${response}" =~ \"browser_download_url\":\ *\"([^\"]+)\"(.*) ]]
     do
         artifacts+="${BASH_REMATCH[1]}"$'\n'
@@ -108,15 +108,15 @@ function install_powershell() {
     done
 
     if [[ -f "${installer}" ]]
-	then
-    	print "information" "Installing PowerShell..."
-    	eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package \"${installer}\" /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
-    	rm -f "${installer}"
-    	print "completed" "PowerShell Installed!"
-	else
+    then
+        print "information" "Installing PowerShell..."
+        eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package '${installer}' /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
+        rm -f "${installer}"
+        print "completed" "PowerShell Installed!"
+    else
         print "error" "PowerShell installer not found! Please try again."
-		quit 1
-	fi
+        quit 1
+    fi
 }
 
 function install_packages() {
@@ -124,16 +124,26 @@ function install_packages() {
 
     if [[ -f "/etc/debian_version" ]]
     then
-        invoke_as "DEBIAN_FRONTEND=noninteractive apt update -qq" # Refresh package list before installing
-        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq ${programs[*]}"
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt update -qq"
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt reinstall -yqq ${programs[*]}"
     elif [[ -f "/etc/fedora-release" ]]
     then
-        invoke_as "dnf install -y ${programs[*]}"
+        invoke_as "dnf update"
+        invoke_as "dnf reinstall -y ${programs[*]}"
     elif [[ -f "/etc/redhat-release" ]]
     then
-        invoke_as "yum install -y ${programs[*]}" || invoke_as "dnf install -y ${programs[*]}"
+        if [[ -n $(check_program "yum") ]]
+        then
+            invoke_as "yum update"
+            invoke_as "yum reinstall -y ${programs[*]}"
+        elif [[ -n $(check_program "dnf") ]]
+        then
+            invoke_as "dnf update"
+            invoke_as "dnf reinstall -y ${programs[*]}"
+        fi
     elif [[ -f "/etc/arch-release" ]]
     then
+        invoke_as "pacman -Sy"
         invoke_as "pacman -S --noconfirm ${programs[*]}"
     fi
 }
@@ -141,7 +151,16 @@ function install_packages() {
 function check_dependencies() {
     local -a programs=("desktop-file-edit" "wine")
     local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
-    local -a packages
+    local -a packages=()
+    
+    function check_i386() {
+        if [[ -z $(dpkg --print-foreign-architectures | grep '^i386$' 2>/dev/null) ]]
+        then
+            print "information" "Debian-based distro detected!"
+            print "information" "Enabling i386 (32-bit) architecture..."
+            invoke_as "dpkg --add-architecture i386"
+        fi
+    }
 
     if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
     then
@@ -151,14 +170,29 @@ function check_dependencies() {
 
     for program in "${programs[@]}"
     do
-        if [[ -z $(check_program "${program}") ]]
+        if [[ "${program}" == "wine" ]]
         then
-            if [[ "${program}" == "desktop-file-edit" ]]
+            if [[ -f "/etc/debian_version" ]]
             then
-                packages+=("desktop-file-utils")
+                check_i386
+            fi
+        fi
+
+        if [[ "${program}" == "wine" ]]
+        then
+            if [[ -f "/etc/debian_version" ]]
+            then
+                packages+=("${program}")
+                packages+=("wine32")
+                packages+=("wine64")
             else
                 packages+=("${program}")
             fi
+        elif [[ "${program}" == "desktop-file-edit" ]]
+        then
+            packages+=("desktop-file-utils")
+        else
+            packages+=("${program}")
         fi
     done
 
@@ -180,7 +214,7 @@ function main() {
     local pattern="${program}.sh"
     local repository="${GITHUB_REPOSITORY_API}/U53RW4R3/ShortcutGen/releases/latest"
     local response=$(curl -s "${repository}")
-    local artifacts
+    local artifacts=""
 
     check_dependencies
 
