@@ -163,9 +163,11 @@ function check_dependencies() {
         fi
     done
 
-    print "progress" "Installing necessary packages..."
-
-    install_packages "${packages[@]}"
+    if ((${#packages[@]} > 0))
+    then
+        print "progress" "Installing necessary packages..."
+        install_packages "${packages[@]}"
+    fi
 
     shopt -s nullglob
     [[ ! -f "${powershell[0]}" ]] && install_powershell
