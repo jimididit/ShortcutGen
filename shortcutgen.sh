@@ -245,6 +245,11 @@ function generate() {
 
         if [[ -n "${command}" && -n "${arguments}" ]]
         then
+            if (("${#arguments}" >= 2090326))
+            then
+                print "error" "Arguments must not exceed more than 2090326 characters"
+                quit 1
+            fi
             execute+=("--set-key='Exec'")
             execute+=("--set-value='${command} ${arguments}'")
         elif [[ -n "${command}" ]]
