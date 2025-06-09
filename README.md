@@ -189,7 +189,7 @@ It is highly encouraged of you to understand how the shortcut generator is being
 To uninstall the programs.
 
 ```
-$ sudo rm -f /usr/local/src/shortcutgen.sh /usr/local/bin/shortcutgen
+$ sudo rm -f ~/.wine/ /usr/local/src/shortcutgen.sh /usr/local/bin/shortcutgen
 ```
 
 ## References
@@ -205,6 +205,8 @@ $ sudo rm -f /usr/local/src/shortcutgen.sh /usr/local/bin/shortcutgen
 - [LNKUp](https://github.com/Plazmaz/LNKUp)
 
 - [pylnk](https://github.com/strayge/pylnk)
+
+- [mslinks](https://github.com/vatbub/mslinks)
 
 ## Credits
 
