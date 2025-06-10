@@ -245,7 +245,7 @@ function generate() {
 
         if [[ -n "${command}" && -n "${arguments}" ]]
         then
-            if (("${#arguments}" >= 2090326))
+            if (("${#arguments}" <= 2090326))
             then
                 print "error" "Arguments must not exceed more than 2090326 characters"
                 quit 1
