@@ -10,7 +10,6 @@ RESET="\033[0m"
 # Set the WINEPREFIX_DIRECTORY to the user's home directory
 WINEPREFIX_DIRECTORY="${HOME}/.wine"
 
-# Initialize variables to avoid unbound errors under strict mode:
 VERSION=
 ARGUMENTS=""
 COMMAND=""
@@ -42,7 +41,7 @@ function info() {
     print "${color} ${message}"
 }
 
-function finish() {
+function fin() {
     local message="${1}"
     local color="${GREEN}[*]${RESET}"
 
@@ -238,7 +237,7 @@ function generate() {
         eval "${execute[*]} pwsh.exe -ExecutionPolicy Bypass -File ${temporary_file} 2>/dev/null"
         rm -f "${temporary_file}"
 
-        print "completed" "Payload has been generated!"
+        fin "Payload has been generated!"
     }
 
     function desktop_entry() {
@@ -316,7 +315,7 @@ function generate() {
         execute+=("--remove-key=\"X-Desktop-File-Install-Version\"")
         touch "${OUTPUT}"
 
-        print "completed" "Payload has been generated!"
+        fin "Payload has been generated!"
         eval "${execute[*]} ${OUTPUT} &>/dev/null"
     }
 

@@ -28,7 +28,7 @@ function info() {
     print "${color} ${message}"
 }
 
-function finish() {
+function fin() {
     local message="${1}"
     local color="${GREEN}[*]${RESET}"
 
@@ -124,7 +124,7 @@ function install_powershell() {
         info "Installing PowerShell..."
         eval "WINEDEBUG=-all WINEARCH=win64 WINEPREFIX='${WINEPREFIX_DIRECTORY}' wine msiexec.exe /package '${installer}' /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1 ENABLE_PSREMOTING=1 REGISTER_MANIFEST=1 USE_MU=1 ENABLE_MU=1 ADD_PATH=1 &>/dev/null"
         rm -f "${installer}"
-        finish "PowerShell Installed!"
+        fin "PowerShell Installed!"
     else
         error "PowerShell installer not found! Please try again."
         quit 1
@@ -137,21 +137,21 @@ function install_packages() {
     if [[ -f "/etc/debian_version" ]]
     then
         invoke_as "DEBIAN_FRONTEND=noninteractive apt update -qq"
-        invoke_as "DEBIAN_FRONTEND=noninteractive apt reinstall -yqq ${programs[*]}"
+        invoke_as "DEBIAN_FRONTEND=noninteractive apt install -yqq ${programs[*]}"
     elif [[ -f "/etc/fedora-release" ]]
     then
         invoke_as "dnf update"
-        invoke_as "dnf reinstall -y ${programs[*]}"
+        invoke_as "dnf install -y ${programs[*]}"
     elif [[ -f "/etc/redhat-release" ]]
     then
         if [[ -n $(check_program "yum") ]]
         then
             invoke_as "yum update"
-            invoke_as "yum reinstall -y ${programs[*]}"
+            invoke_as "yum install -y ${programs[*]}"
         elif [[ -n $(check_program "dnf") ]]
         then
             invoke_as "dnf update"
-            invoke_as "dnf reinstall -y ${programs[*]}"
+            invoke_as "dnf install -y ${programs[*]}"
         fi
     elif [[ -f "/etc/arch-release" ]]
     then
@@ -160,11 +160,7 @@ function install_packages() {
     fi
 }
 
-function check_dependencies() {
-    local -a programs=("desktop-file-edit" "wine")
-    local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
-    local -a packages=()
-    
+function check_distro() {
     function check_i386() {
         if [[ -z $(dpkg --print-foreign-architectures | grep '^i386$' 2>/dev/null) ]]
         then
@@ -174,11 +170,28 @@ function check_dependencies() {
         fi
     }
 
+    source "/etc/os-release"
+    if [[ -f "/etc/debian_version" ]]
+    then
+        if [[ "${ID}" == "debian" || "${ID_LIKE}" == "debian" ]]
+        then
+            check_i386
+        fi
+    fi
+}
+
+function check_dependencies() {
+    local -a programs=("desktop-file-edit" "wine")
+    local -a powershell=("${WINEPREFIX_DIRECTORY}/drive_c/Program Files/PowerShell/"*/pwsh.exe)
+    local -a packages=()
+
     if [[ ! -d "${WINEPREFIX_DIRECTORY}" ]]
     then
         info "Creating directory: ${WINEPREFIX_DIRECTORY}."
         mkdir "${WINEPREFIX_DIRECTORY}"
     fi
+
+    check_distro
 
     for program in "${programs[@]}"
     do
@@ -186,17 +199,14 @@ function check_dependencies() {
         then
             if [[ -f "/etc/debian_version" ]]
             then
-                check_i386
-            fi
-        fi
-
-        if [[ "${program}" == "wine" ]]
-        then
-            if [[ -f "/etc/debian_version" ]]
-            then
-                packages+=("${program}")
-                packages+=("wine32")
-                packages+=("wine64")
+                if [[ "${ID}" == "debian" || "${ID_LIKE}" == "debian" ]]
+                then
+                    packages+=("${program}")
+                    packages+=("wine32")
+                    packages+=("wine64")
+                else
+                    packages+=("${program}")
+                fi
             else
                 packages+=("${program}")
             fi
@@ -264,7 +274,7 @@ function main() {
 
     if [[ -f "${source}" && -f "${destination}" ]]
     then
-        finish "The installation is a success!"
+        fin "The installation is a success!"
     else
         error "The installation has failed! Please try again."
     fi

